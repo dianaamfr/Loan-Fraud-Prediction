@@ -12,5 +12,22 @@
 - Withdrawal da trasação deveria ser negativo
 - k_symbol parece ser uma mera descição da transferência, pelo que podemos experimentar remover
 
-## District
+# District
 - Experimentar média do unemployment rate e dos crimes no district
+- O atributo unemploymant rate '95 está como object, quando devia ser float
+- O atributo no. of commited crimes '95 está como object, quando devia ser float
+
+# Loan Test
+- Tem 354 valores a null, no atributo status
+
+# Transaction Test
+- Tem 5130 valores a null, no atributo operation
+- Tem 17419 valores a null, no atributo k_symbol
+- Tem 24377 valores a null, no atributo bank
+- Tem 21061 valores a null, no atributo account
+
+# Transaction Train
+- Tem 70761 valores a null, no atributo operation
+- Tem 185244 valores a null, no atributo k_symbol
+- Tem 299443 valores a null, no atributo bank
+- Tem 294456 valores a null, no atributo account
