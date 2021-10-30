@@ -4,9 +4,6 @@
 **Tratamento sugerido**
 - Derivar 'birth_number' em 'gender' e 'birth_date': the number is in the form YYMMDD for men, and in the form YYMM+50DD for women
 
-**Observações**
-- Penso que existe datas de nascimento inválidas (e.g. "436007" seria 07/00/1943). Não sei se é suposto considerarmos.
-
 # Transaction
 **Tratamento sugerido**
 - Se uma transferência é feita depois da loan não deveria ser considerada para a análise
