@@ -23,6 +23,8 @@ for key in dataframes:
 # print(dataframes['account'].info())
 # print()
 # print(dataframes['account'].isnull().sum())
+# print()
+# print(dataframes['account'].nunique())
 
 # Card Test Dataset
 # print(dataframes['card_test'].head())
@@ -32,6 +34,8 @@ for key in dataframes:
 # print(dataframes['card_test'].info())
 # print()
 # print(dataframes['card_test'].isnull().sum())
+# print()
+# print(dataframes['card_test'].nunique())
 
 # Card Train Dataset
 # print(dataframes['card_train'].head())
@@ -41,6 +45,8 @@ for key in dataframes:
 # print(dataframes['card_train'].info())
 # print()
 # print(dataframes['card_train'].isnull().sum())
+# print()
+# print(dataframes['card_train'].nunique())
 
 # Client Dataset
 # print(dataframes['client'].head())
@@ -50,6 +56,8 @@ for key in dataframes:
 # print(dataframes['client'].info())
 # print()
 # print(dataframes['client'].isnull().sum())
+# print()
+# print(dataframes['client'].nunique())
 
 # Disposition Dataset
 # print(dataframes['disp'].head())
@@ -59,6 +67,8 @@ for key in dataframes:
 # print(dataframes['disp'].info())
 # print()
 # print(dataframes['disp'].isnull().sum())
+# print()
+# print(dataframes['disp'].nunique())
 
 # District Dataset
 print(dataframes['district'].head())
@@ -68,6 +78,8 @@ print()
 print(dataframes['district'].info())
 print()
 print(dataframes['district'].isnull().sum())
+print()
+print(dataframes['district'].nunique())
 
 # Loan Test Dataset
 # print(dataframes['loan_test'].head())
@@ -77,6 +89,8 @@ print(dataframes['district'].isnull().sum())
 # print(dataframes['loan_test'].info())
 # print()
 # print(dataframes['loan_test'].isnull().sum())
+# print()
+# print(dataframes['loan_test'].nunique())
 
 # Loan Train Dataset
 # print(dataframes['loan_train'].head())
@@ -86,6 +100,8 @@ print(dataframes['district'].isnull().sum())
 # print(dataframes['loan_train'].info())
 # print()
 # print(dataframes['loan_train'].isnull().sum())
+# print()
+# print(dataframes['loan_train'].nunique())
 
 # Transaction Test Dataset
 # print(dataframes['trans_test'].head())
@@ -95,6 +111,8 @@ print(dataframes['district'].isnull().sum())
 # print(dataframes['trans_test'].info())
 # print()
 # print(dataframes['trans_test'].isnull().sum())
+# print()
+# print(dataframes['trans_test'].nunique())
 
 # Transaction Train Dataset
 # print(dataframes['trans_train'].head())
@@ -104,6 +122,8 @@ print(dataframes['district'].isnull().sum())
 # print(dataframes['trans_train'].info())
 # print()
 # print(dataframes['trans_train'].isnull().sum())
+# print()
+# print(dataframes['trans_train'].nunique())
 
 ##### Exploratory Data Analysis #####
 
