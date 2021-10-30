@@ -1,17 +1,19 @@
 import pandas as pd
 
-account_csv = pd.read_csv('../ficheiros_competicao/account.csv', delimiter=";")
-card_test_csv = pd.read_csv('../ficheiros_competicao/card_test.csv', delimiter=";")
-card_train_csv = pd.read_csv('../ficheiros_competicao/card_train.csv', delimiter=";")
-client_csv = pd.read_csv('../ficheiros_competicao/client.csv', delimiter=";")
-disp_csv = pd.read_csv('../ficheiros_competicao/disp.csv', delimiter=";")
-district_csv = pd.read_csv('../ficheiros_competicao/district.csv', delimiter=";")
-loan_test_csv = pd.read_csv('../ficheiros_competicao/loan_test.csv', delimiter=";")
-loan_train_csv = pd.read_csv('../ficheiros_competicao/loan_train.csv', delimiter=";")
-trans_test_csv = pd.read_csv('../ficheiros_competicao/trans_test.csv', delimiter=";")
-trans_train_csv = pd.read_csv('../ficheiros_competicao/trans_train.csv', delimiter=";")
+pd.set_option('display.max_columns', 100)
+pd.set_option('display.width', 500)
 
-#print(account_csv.info())
+account_csv = pd.read_csv('../ficheiros_competicao/account.csv', delimiter=";", low_memory=False)
+card_test_csv = pd.read_csv('../ficheiros_competicao/card_test.csv', delimiter=";", low_memory=False)
+card_train_csv = pd.read_csv('../ficheiros_competicao/card_train.csv', delimiter=";", low_memory=False)
+client_csv = pd.read_csv('../ficheiros_competicao/client.csv', delimiter=";", low_memory=False)
+disp_csv = pd.read_csv('../ficheiros_competicao/disp.csv', delimiter=";", low_memory=False)
+district_csv = pd.read_csv('../ficheiros_competicao/district.csv', delimiter=";" , low_memory=False)
+loan_test_csv = pd.read_csv('../ficheiros_competicao/loan_test.csv', delimiter=";", low_memory=False)
+loan_train_csv = pd.read_csv('../ficheiros_competicao/loan_train.csv', delimiter=";", low_memory=False)
+trans_test_csv = pd.read_csv('../ficheiros_competicao/trans_test.csv', delimiter=";", low_memory=False)
+trans_train_csv = pd.read_csv('../ficheiros_competicao/trans_train.csv', delimiter=";", low_memory=False)
+
 
 '''
 Example - join csv by a specific column
