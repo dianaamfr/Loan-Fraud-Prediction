@@ -115,15 +115,15 @@ for key in dataframes:
 # print(dataframes['trans_test'].nunique())
 
 # Transaction Train Dataset
-print(dataframes['trans_train'].head())
-print()
-print(dataframes['trans_train'].describe())
-print()
-print(dataframes['trans_train'].info())
-print()
-print(dataframes['trans_train'].isnull().sum())
-print()
-print(dataframes['trans_train'].nunique())
+# print(dataframes['trans_train'].head())
+# print()
+# print(dataframes['trans_train'].describe())
+# print()
+# print(dataframes['trans_train'].info())
+# print()
+# print(dataframes['trans_train'].isnull().sum())
+# print()
+# print(dataframes['trans_train'].nunique())
 
 ##### Exploratory Data Analysis #####
 
@@ -176,9 +176,15 @@ print(dataframes['trans_train'].nunique())
 
 # sns.distplot(dataframes['district']['no. of inhabitants'])
 # plt.show()
+# print("Max no. of inhabitants", np.max(dataframes['district']['no. of inhabitants']))
+# print("Second max no. of inhabitants:", sorted_inhabitants[-2])
+# print("Min no. of inhabitants:", np.min(dataframes['district']['no. of inhabitants']))
+# plt.boxplot(dataframes['district']['no. of inhabitants'])
+# plt.show()
 # dataframes['district']['no. of inhabitants'] = np.log(dataframes['district']['no. of inhabitants']) # log transformation
 # sns.distplot(dataframes['district']['no. of inhabitants'])
 # plt.show()
+# sorted_inhabitants = np.sort(dataframes['district']['no. of inhabitants'])
 
 # sns.distplot(dataframes['district']['no. of municipalities with inhabitants < 499 '])
 # plt.show()
@@ -222,7 +228,10 @@ print(dataframes['trans_train'].nunique())
 # sns.distplot(dataframes['district']['average salary '])
 # plt.show()
 
-# TODO
+
+#dataframes['district']["unemploymant rate '95 "] = pd.to_numeric(dataframes['district']["unemploymant rate '95 "], errors='coerce')
+#print("Na values in unemploymant rate '95", dataframes['district']["unemploymant rate '95 "].isna().sum())
+#dataframes['district']["unemploymant rate '95 "].dropna()
 # sns.distplot(dataframes['district']["unemploymant rate '95 "])
 # plt.show()
 # dataframes['district']["unemploymant rate '95 "] = np.log(dataframes['district']["unemploymant rate '95 "]) # log transformation
@@ -241,8 +250,10 @@ print(dataframes['trans_train'].nunique())
 # sns.distplot(dataframes['district']['no. of enterpreneurs per 1000 inhabitants '])
 # plt.show()
 
-# TODO
-# sns.distplot(dataframes['district']["no. of commited crimes '95 "])
+# dataframes['district']["no. of commited crimes '95 "] = pd.to_numeric(dataframes['district']["no. of commited crimes '95 "], errors='coerce')
+# print("Na values in no. of commited crimes '95 ", dataframes['district']["no. of commited crimes '95 "].isna().sum())
+# dataframes['district']["no. of commited crimes '95 "].dropna()
+#sns.distplot(dataframes['district']["no. of commited crimes '95 "])
 # plt.show()
 # dataframes['district']["no. of commited crimes '95 "] = np.log(dataframes['district']["no. of commited crimes '95 "]) # log transformation
 # sns.distplot(dataframes['district']["no. of commited crimes '95 "])
@@ -350,42 +361,42 @@ print(dataframes['trans_train'].nunique())
 # plt.show()
 
 # Transaction Train Dataset
-sns.distplot(dataframes['trans_train']['date'])
-plt.show()
-dataframes['trans_train']['date'] = np.log(dataframes['trans_train']['date']) # log transformation
-sns.distplot(dataframes['trans_train']['date'])
-plt.show()
+# sns.distplot(dataframes['trans_train']['date'])
+# plt.show()
+# dataframes['trans_train']['date'] = np.log(dataframes['trans_train']['date']) # log transformation
+# sns.distplot(dataframes['trans_train']['date'])
+# plt.show()
 
-print()
-sns.countplot(x ='type', data = dataframes['trans_train'])
-plt.show()
+# print()
+# sns.countplot(x ='type', data = dataframes['trans_train'])
+# plt.show()
 
-print()
-sns.countplot(x ='operation', data = dataframes['trans_train'])
-plt.show()
+# print()
+# sns.countplot(x ='operation', data = dataframes['trans_train'])
+# plt.show()
 
-sns.distplot(dataframes['trans_train']['amount'])
-plt.show()
+# sns.distplot(dataframes['trans_train']['amount'])
+# plt.show()
 # dataframes['trans_train']['amount'] = np.log(dataframes['trans_train']['amount']) # log transformation
 # sns.distplot(dataframes['trans_train']['amount'])
 # plt.show()
 
-sns.distplot(dataframes['trans_train']['balance'])
-plt.show()
-dataframes['trans_train']['balance'] = np.log(dataframes['trans_train']['balance']) # log transformation
-sns.distplot(dataframes['trans_train']['balance'])
-plt.show()
+# sns.distplot(dataframes['trans_train']['balance'])
+# plt.show()
+# dataframes['trans_train']['balance'] = np.log(dataframes['trans_train']['balance']) # log transformation
+# sns.distplot(dataframes['trans_train']['balance'])
+# plt.show()
 
-print()
-sns.countplot(x ='k_symbol', data = dataframes['trans_train'])
-plt.show()
+# print()
+# sns.countplot(x ='k_symbol', data = dataframes['trans_train'])
+# plt.show()
 
-print()
-sns.countplot(x ='bank', data = dataframes['trans_train'])
-plt.show()
+# print()
+# sns.countplot(x ='bank', data = dataframes['trans_train'])
+# plt.show()
 
-sns.distplot(dataframes['trans_train']['account'])
-plt.show()
+# sns.distplot(dataframes['trans_train']['account'])
+# plt.show()
 # dataframes['trans_train']['account'] = np.log(dataframes['trans_train']['account']) # log transformation
 # sns.distplot(dataframes['trans_train']['account'])
 # plt.show()
