@@ -42,3 +42,12 @@
 - Relevância das informações do destinatário da transferência
 - Pertinência de converter o atributo 'value' para para negativo quando 'type'='withdrawal'
 - Relevância do atributo k_symbol
+
+# Database - TODO
+- Corrigir types, automaticamente gerados com csvsql
+- Possivelmente passar as datas para tipo DATE
+- Adicionar novas colunas e mudar existentes (por ex: separar gender da birth date)
+
+# LOGBOOK
+
+- Changed attribute "code" to "district_id" in District table
