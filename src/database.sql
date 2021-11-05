@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS client (
 
 LOAD DATA LOCAL INFILE  
 '../ficheiros_competicao/client.csv'
-INTO TABLE card_test
+INTO TABLE client
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
