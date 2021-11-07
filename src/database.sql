@@ -140,13 +140,13 @@ nr_enterpreneurs_1000_inhabitants, nr_commited_crimes_95, nr_commited_crimes_96)
 -- Create and Load Loan Train Table
 
 CREATE TABLE IF NOT EXISTS loan_train (
-    loan_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    granted_date DECIMAL NOT NULL,
-    amount DECIMAL NOT NULL,
-    duration DECIMAL NOT NULL,
-    payments DECIMAL NOT NULL,
-    loan_status DECIMAL NOT NULL
+    loan_id INT NOT NULL,
+    account_id INT NOT NULL,
+    granted_date INT NOT NULL,
+    amount INT NOT NULL,
+    duration INT NOT NULL,
+    payments INT NOT NULL,
+    loan_status INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
@@ -161,13 +161,13 @@ IGNORE 1 ROWS
 -- Create and Load Loan Test Table
 
 CREATE TABLE IF NOT EXISTS loan_test (
-    loan_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    granted_date DECIMAL NOT NULL,
-    amount DECIMAL NOT NULL,
-    duration DECIMAL NOT NULL,
-    payments DECIMAL NOT NULL,
-    loan_status BOOLEAN
+    loan_id INT NOT NULL,
+    account_id INT NOT NULL,
+    granted_date INT NOT NULL,
+    amount INT NOT NULL,
+    duration INT NOT NULL,
+    payments INT NOT NULL,
+    loan_status DECIMAL NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
