@@ -2,6 +2,19 @@ CREATE DATABASE IF NOT EXISTS bank_database;
 
 USE bank_database;
 
+-- Drop previous tables
+
+DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS card_train;
+DROP TABLE IF EXISTS card_test;
+DROP TABLE IF EXISTS client;
+DROP TABLE IF EXISTS disp;
+DROP TABLE IF EXISTS district;
+DROP TABLE IF EXISTS loan_train;
+DROP TABLE IF EXISTS loan_test;
+DROP TABLE IF EXISTS trans_train;
+DROP TABLE IF EXISTS trans_test;
+
 -- Create and Load Account Table
 
 CREATE TABLE IF NOT EXISTS account (
