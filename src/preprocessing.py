@@ -400,3 +400,117 @@ for key in dataframes:
 # dataframes['trans_train']['account'] = np.log(dataframes['trans_train']['account']) # log transformation
 # sns.distplot(dataframes['trans_train']['account'])
 # plt.show()
+
+# sns.distplot(dataframes['loan_train']['amount'])
+# plt.show()
+# dataframes['loan_train']['amount'] = np.log(dataframes['loan_train']['amount']) # log transformation
+# sns.distplot(dataframes['loan_train']['amount'])
+# plt.show()
+
+#####################################
+########### CORRELATION #############
+#####################################
+
+# fig, ax = plt.subplots(figsize=(20, 15))
+# sns.heatmap(
+#         dataframes['loan_train'].corr(), 
+#         cmap = sns.diverging_palette(220, 10, as_cmap = True),
+#         square=True, 
+#         cbar=False,
+#         ax=ax,
+#         annot=True, 
+#         linewidths=0.1,vmax=1.0, linecolor='white',
+#         annot_kws={'fontsize':12 })
+# plt.show()
+
+
+############ 282 good loans, 46 bad loans ###########
+
+##########################
+####### LOAN AMOUNT ######
+##########################
+
+df_good = dataframes['loan_train'].loc[(dataframes['loan_train']['status'] == 1) ]
+df_bad = dataframes['loan_train'].loc[(dataframes['loan_train']['status'] == -1) ]
+
+print("Number of status 1: ",df_good.shape[0])
+print("Number of status -1: ",df_bad.shape[0])
+
+# Amount
+# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+# df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6)
+# df_bad.amount.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6)
+# ax1.set_title('Loan Amount')
+# ax2.set_title('Loan Amount')
+# ax1.legend()
+# ax2.legend()
+# plt.show()
+
+###################################################
+# DAYS BETWEEN ACCOUNT CREATION AND LOAN ISSUANCE #
+###################################################
+
+#Passar para datetime
+# dataframes['loan_train']['date'] = pd.to_datetime(dataframes['loan_train']['date'], format='%Y-%m-%d')
+# dataframes['account']['date'] = pd.to_datetime(dataframes['loan_train']['date'], format='%Y-%m-%d')
+
+# dataframes['loan_train']['days_between_statistics'] = dataframes['loan_train']['date'] - dataframes['account']['date']
+
+# df_good = dataframes['loan_train'].loc[(dataframes['loan_train']['status'] == 1) ]
+# df_bad = dataframes['loan_train'].loc[(dataframes['loan_train']['status'] == -1) ]
+
+# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+# df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='good', color='green', alpha=0.6)
+# df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='bad', color='red', alpha=0.6)
+# ax1.set_title('Days Between Account Creation and Loan Issuance')
+# ax2.set_title('Days Between Account Creation and Loan Issuance')
+# ax1.legend()
+# ax2.legend()
+# plt.show()
+
+
+######################################################
+## PIE CHART PERCENTAGE OF GOOD LOANS FOR DISTRICT ##
+######################################################
+
+
+labels = dataframes['district']['code '].values #districts
+percentages = [] 
+districts_sem_loans=[]
+for dist in labels:
+    cnt_good=0
+    cnt_total=0
+    df_accounts = dataframes['account'].loc[(dataframes['account']['district_id'] == dist) ]
+    accounts=df_accounts['account_id'].values
+    for account in accounts:
+        df_loans = dataframes['loan_train'].loc[(dataframes['loan_train']['account_id'] == account)]
+        loans=df_loans['loan_id']
+        for loan in loans:
+            df_good = dataframes['loan_train'].loc[(dataframes['loan_train']['loan_id'] == loan)]
+            cnt_total+=1
+            if(df_good.iloc[0]['status']==1): 
+                cnt_good+=1
+    if(cnt_total!=0):
+        print('este distrito tem loans',dist)
+        good_percentage=cnt_good/cnt_total
+        percentages.append(good_percentage)
+    else:
+        print('este distrito não tem loans',dist)
+        districts_sem_loans.append(dist)
+
+for d in districts_sem_loans:
+    indexArr = np.argwhere(labels==d)
+    labels=np.delete(labels,indexArr)
+
+fig1, ax1 = plt.subplots()
+ax1.pie(percentages,  labels=labels, autopct='%1.1f%%',)
+ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+plt.show()
+
+
+
+######################################################
+## SCATTER ##
+######################################################
+
