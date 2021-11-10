@@ -400,3 +400,26 @@ for key in dataframes:
 # dataframes['trans_train']['account'] = np.log(dataframes['trans_train']['account']) # log transformation
 # sns.distplot(dataframes['trans_train']['account'])
 # plt.show()
+
+amounts=dataframes['loan_train']['amount'].unique()[:-1]
+print(amounts)
+status=[]
+dic={}
+
+for a in amounts:
+    details=pd.DataFrame(dataframes['loan_train'],columns=['amount','status'])
+    details.apply(lambda x : True
+            if ((x['status'] == "1") and (x['amount'==a])) else False, axis = 1)
+
+    num_rows = len(details[details == True].index)
+    print('Number of Rows amount equal to ',a )
+    print(num_rows)
+    dic[a]=num_rows
+
+
+
+print('Number of Rows in dataframe in which College is Geu : ',
+      num_rows )
+fig1, ax1 = plt.subplots()
+fig = plt.bar(dic.keys(), dic.values())
+plt.show()

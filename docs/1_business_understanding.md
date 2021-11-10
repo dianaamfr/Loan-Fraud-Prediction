@@ -9,10 +9,15 @@ The bank wants to be able to perform specific actions to improve its services, w
 
 ### Business Goals
 
+- Quantificar
+
 Answer the question "To loan or not to loan?": 
 Determine if a given loan will end successfully, given data about the clients (the accounts, transactions, loans already granted, credit cards issued and demographic information).
 
 ### Data Mining Goals
+
+- AUC minimo
+- Entender significado do AUC no contexto do problema
 
 Our goal is to build a model that uses available client data (the bank provides previous banking activity) to predict the likelihood of success of a loan for each client.
 
