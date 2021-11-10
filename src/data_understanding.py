@@ -4,7 +4,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-##### Loading Datasets #####
+##### Loading Datasets ##### 
 files_folder = Path("../ficheiros_competicao/")
 
 dataframes = dict.fromkeys(['account', 'card_test', 'card_train', 'client', 'disp', 'district', 'loan_test', 'loan_train', 'trans_test', 'trans_train'])
