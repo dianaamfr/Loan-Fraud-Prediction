@@ -18,10 +18,10 @@ DROP TABLE IF EXISTS trans_test;
 -- Create and Load Account Table
 
 CREATE TABLE IF NOT EXISTS account (
-    account_id DECIMAL NOT NULL,
-    district_id DECIMAL NOT NULL,
+    account_id INT NOT NULL,
+    district_id INT NOT NULL,
     frequency VARCHAR(20) NOT NULL,
-    creation_date DECIMAL NOT NULL
+    creation_date INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  

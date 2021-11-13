@@ -16,5 +16,5 @@ def stats(df):
     print(df.nunique())
 
 def get_files_folder():
-    return Path("../../ficheiros_competicao/")
+    return Path("../ficheiros_competicao/")
     
