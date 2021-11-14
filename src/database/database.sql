@@ -107,22 +107,22 @@ IGNORE 1 ROWS
 -- Create and Load District Table
 
 CREATE TABLE IF NOT EXISTS district (
-    district_id DECIMAL NOT NULL,
+    district_id INT NOT NULL,
     district_name VARCHAR(20) NOT NULL,
     region VARCHAR(20) NOT NULL,
-    nr_inhabitants DECIMAL NOT NULL,
-    nr_municip_inhabitants_499 DECIMAL NOT NULL,
-    nr_municip_inhabitants_500_1999 DECIMAL NOT NULL,
-    nr_municip_inhabitants_2000_9999 DECIMAL NOT NULL,
-    nr_municip_inhabitants_10000 DECIMAL NOT NULL,
-    nr_cities DECIMAL NOT NULL,
-    ratio_urban_inhabitants DECIMAL NOT NULL,
-    average_salary DECIMAL NOT NULL,
+    nr_inhabitants INT NOT NULL,
+    nr_municip_inhabitants_499 INT NOT NULL,
+    nr_municip_inhabitants_500_1999 INT NOT NULL,
+    nr_municip_inhabitants_2000_9999 INT NOT NULL,
+    nr_municip_inhabitants_10000 INT NOT NULL,
+    nr_cities INT NOT NULL,
+    ratio_urban_inhabitants FLOAT NOT NULL,
+    average_salary FLOAT NOT NULL,
     unemployment_rate_95 VARCHAR(20) NOT NULL,
-    unemployment_rate_96 DECIMAL NOT NULL,
-    nr_enterpreneurs_1000_inhabitants DECIMAL NOT NULL,
+    unemployment_rate_96 FLOAT NOT NULL,
+    nr_enterpreneurs_1000_inhabitants INT NOT NULL,
     nr_commited_crimes_95 VARCHAR(20) NOT NULL,
-    nr_commited_crimes_96 DECIMAL NOT NULL
+    nr_commited_crimes_96 INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
