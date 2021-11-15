@@ -16,5 +16,8 @@ Create the virtual environment:
 3. pip3 install -r ../requirements.txt
 4. TODO
 
+Utils:
+- pip install pipreqs
+
 ## Windows
 
