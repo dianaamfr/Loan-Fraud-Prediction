@@ -127,26 +127,36 @@ def variable_relations():
     district_df.dropna(inplace=True) # Remove NaN values
 
     # Compare nr commited crimes 
-    sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", sizes=(40, 400), alpha=.5,height=6)
+    sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", sizes=(40, 400), alpha=.8,height=6)
     plt.savefig('data_understanding/plots/correlation/district/commited_crimes_95_96.jpg')
     plt.clf()
 
     # Compare nr inhabitants
-    sns.relplot(data=district_df, y="unemployment_rate_95", x="unemployment_rate_96", sizes=(40, 400), alpha=.5,height=6)
+    sns.relplot(data=district_df, y="unemployment_rate_95", x="unemployment_rate_96", sizes=(40, 400), alpha=.8,height=6)
     plt.savefig('data_understanding/plots/correlation/district/unemployment_95_96.jpg')
     plt.clf()
 
     # Inhabitants and salary
-    sns.relplot(data=district_df, y="ratio_urban_inhabitants", x="nr_inhabitants", hue="average_salary", size="average_salary",sizes=(40, 400), alpha=.5,height=6)
+    sns.relplot(data=district_df, y="ratio_urban_inhabitants", x="nr_inhabitants", hue="average_salary", size="average_salary",sizes=(40, 400), alpha=.8,height=6)
     plt.savefig('data_understanding/plots/correlation/district/inhabitants_salary.jpg')
     plt.clf()
 
-    # Inhabitants and commited crimes 96
-    sns.relplot(data=district_df, y="nr_commited_crimes_96", x="nr_inhabitants", sizes=(40, 400), alpha=.5,height=6)
-    plt.savefig('data_understanding/plots/correlation/district/inhabitants_crimes.jpg')
+    # Inhabitants and average salary
+    g = sns.relplot(data=district_df, y="average_salary", x="nr_inhabitants", sizes=(40, 400), alpha=.8, height=6)
+    plt.savefig('data_understanding/plots/correlation/district/inhabitants_salary2.jpg')
     plt.clf()
 
-    g = sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", hue="average_salary", size="average_salary", sizes=(10, 400), alpha=0.5)
+    # Inhabitants and commited crimes 96
+    sns.relplot(data=district_df, y="nr_commited_crimes_96", x="nr_inhabitants", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig('data_understanding/plots/correlation/district/inhabitants_crimes_96.jpg')
+    plt.clf()
+
+    # Inhabitants and commited crimes 95
+    sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_inhabitants", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig('data_understanding/plots/correlation/district/inhabitants_crimes_95.jpg')
+    plt.clf()
+
+    g = sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", hue="average_salary", size="average_salary", sizes=(10, 400), alpha=0.8)
     g.set(xscale="log")
     g.set(yscale="log")
     plt.savefig('data_understanding/plots/correlation/district/crimes_salary.jpg')
