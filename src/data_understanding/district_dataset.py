@@ -14,16 +14,19 @@ db = database.Database('bank_database')
 
 def district_du():
     df = db.df_query('SELECT * FROM district')
-
-    df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
+    # Drop NaN values
     df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
+    df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
+    df.dropna(inplace=True) # Remove NaN values
 
     stats(df)
     district_distribution(df)
+    district_correlation(df.copy())
+    variable_relations(df.copy())
+    loan_relations()
 
 def district_distribution(df):
     # Region
-    print()
     sns.countplot(x ='region', data = df)
     plt.savefig(get_distribution_folder('district')/'/region.jpg')
     plt.clf()
@@ -69,8 +72,6 @@ def district_distribution(df):
     plt.clf()
 
     # Unemployment Rate
-    df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
-    df.dropna(subset=['unemployment_rate_95'], inplace=True) # Remove NaN values
     sns.histplot(df["unemployment_rate_95"])
     plt.savefig(get_distribution_folder('district')/'/unemploymant_rate_95.jpg')
     plt.clf()
@@ -88,8 +89,6 @@ def district_distribution(df):
     plt.clf()
 
     # Commited Crimes
-    df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
-    df.dropna(subset=['nr_commited_crimes_95'], inplace=True) # Remove NaN values
     sns.histplot(df["nr_commited_crimes_95"])
     plt.savefig(get_distribution_folder('district')/'/crimes_95.jpg')
     plt.clf()
@@ -106,11 +105,7 @@ def district_distribution(df):
     plt.savefig(get_distribution_folder('district')/'/crimes_96_boxplot.jpg')
     plt.clf()
 
-def district_correlation():
-    df = db.df_query('SELECT * FROM district')
-    df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
-    df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
-
+def district_correlation(df):
     corrMatrix = df.corr()
     plt.figure(figsize=(20,15))
     ax=plt.subplot(111)
@@ -118,13 +113,7 @@ def district_correlation():
     plt.savefig(get_correlation_folder('district')/'/district.jpg')
     plt.clf()
 
-def variable_relations():
-    district_df = db.df_query('SELECT * FROM district')
-
-    # Drop NaN values
-    district_df["nr_commited_crimes_95"] = pd.to_numeric(district_df["nr_commited_crimes_95"], errors='coerce')
-    district_df["unemployment_rate_95"] = pd.to_numeric(district_df["unemployment_rate_95"], errors='coerce')
-    district_df.dropna(inplace=True) # Remove NaN values
+def variable_relations(df):
 
     # Compare nr commited crimes 
     sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", sizes=(40, 400), alpha=.8,height=6)
@@ -184,6 +173,3 @@ def loan_relations():
 if __name__ == '__main__':
     create_plots_folders('district')
     district_du()
-    district_correlation()
-    variable_relations()
-    loan_relations()

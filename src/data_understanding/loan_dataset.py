@@ -15,9 +15,9 @@ db = database.Database('bank_database')
 def loan_train_du():
     df = db.df_query('SELECT * FROM loan_train')
     stats(df)
-    loan_train_distribution(df)
-    loan_train_correlation(df)
-    loan_amount_status(df)
+    loan_train_distribution(df.copy())
+    loan_train_correlation(df.copy())
+    loan_amount_status(df.copy())
 
 def loan_train_distribution(df):  
     sns.histplot(df['granted_date'])
@@ -98,18 +98,18 @@ def loan_test_distribution(df):
 def loan_train_correlation(df):
     
     # Correlation Matrix
-    fig, ax = plt.subplots(figsize=(20, 15))
-    sns.heatmap(
-            df.corr(), 
-            cmap = sns.diverging_palette(220, 10, as_cmap = True),
-            square=True, 
-            cbar=False,
-            ax=ax,
-            annot=True, 
-            linewidths=0.1,vmax=1.0, linecolor='white',
-            annot_kws={'fontsize':12 })
-    plt.savefig(get_correlation_folder('loan')/'loan_train_correlation.jpg')
-    plt.clf()
+    # fig, ax = plt.subplots(figsize=(20, 15))
+    # sns.heatmap(
+    #         df.corr(), 
+    #         cmap = sns.diverging_palette(220, 10, as_cmap = True),
+    #         square=True, 
+    #         cbar=False,
+    #         ax=ax,
+    #         annot=True, 
+    #         linewidths=0.1,vmax=1.0, linecolor='white',
+    #         annot_kws={'fontsize':12 })
+    # plt.savefig(get_correlation_folder('loan')/'loan_train_correlation.jpg')
+    # plt.clf()
 
     # Loan Amount, Duration and Payments
     sns.relplot(data=df, y="amount", x="payments", hue="loan_status", sizes=(40, 400), alpha=.8,height=6)
@@ -120,10 +120,15 @@ def loan_train_correlation(df):
     plt.savefig(get_correlation_folder('loan')/'amount_duration.jpg')
     plt.clf()
 
-    # df["payments X duration"] = df["payments"] * df["duration"] 
-    # sns.relplot(data=df, y="amount", x="payments X duration", hue="loan_status", sizes=(40, 400), alpha=.8,height=6)
-    # plt.savefig(get_correlation_folder('loan')/'amount_payments_duration.jpg')
-    # plt.clf()
+    # Amount/Duration = Payments
+    df["amount/duration"] = df["amount"] / df["duration"]
+    sns.scatterplot(data=df, y="payments", x="amount/duration", hue="loan_status")
+    plt.savefig(get_correlation_folder('loan')/'amount_payments_duration.jpg')
+    plt.clf()
+
+    sns.histplot(data=df, x="amount", hue="loan_status", alpha=0.6)
+    plt.savefig(get_correlation_folder('loan')/'amount_status.jpg')
+    plt.clf()
 
 
 def loan_amount_status(df):

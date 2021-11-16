@@ -22,8 +22,12 @@ We may need to split this atttribute into 'gender' and 'birth_date'.
 ![](../images/crimes_96.jpg)
 ![](../images/crimes_96_boxplot.jpg)
 
+- 
+
 # Loan Train
 - The number of successful loans is much higher(TODO) than the number of fraudulent loans(46) - status is unbalanced.
+- Amount/Duration = Payments
+![](../images/amount_payments_duration.jpg)
 
 # Loan Test
 - 354 null values in status
