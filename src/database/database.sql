@@ -36,10 +36,10 @@ IGNORE 1 ROWS
 -- Create and Load Card Train Table
 
 CREATE TABLE IF NOT EXISTS card_train (
-    card_id DECIMAL NOT NULL,
-    disp_id DECIMAL NOT NULL,
+    card_id INT NOT NULL,
+    disp_id INT NOT NULL,
     card_type VARCHAR(20) NOT NULL,
-    issued DECIMAL NOT NULL
+    issued INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
@@ -54,10 +54,10 @@ IGNORE 1 ROWS
 -- Create and Load Card Test Table
 
 CREATE TABLE IF NOT EXISTS card_test (
-    card_id DECIMAL NOT NULL,
-    disp_id DECIMAL NOT NULL,
+    card_id INT NOT NULL,
+    disp_id INT NOT NULL,
     card_type VARCHAR(20) NOT NULL,
-    issued DECIMAL NOT NULL
+    issued INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
