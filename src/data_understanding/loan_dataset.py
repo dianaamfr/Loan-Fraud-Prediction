@@ -96,6 +96,8 @@ def loan_test_distribution(df):
     plt.clf()
 
 def loan_train_correlation(df):
+    
+    # Correlation Matrix
     fig, ax = plt.subplots(figsize=(20, 15))
     sns.heatmap(
             df.corr(), 
@@ -108,6 +110,21 @@ def loan_train_correlation(df):
             annot_kws={'fontsize':12 })
     plt.savefig(get_correlation_folder('loan')/'loan_train_correlation.jpg')
     plt.clf()
+
+    # Loan Amount, Duration and Payments
+    sns.relplot(data=df, y="amount", x="payments", hue="loan_status", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig(get_correlation_folder('loan')/'amount_payments.jpg')
+    plt.clf()
+
+    sns.relplot(data=df, y="amount", x="duration", hue="loan_status", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig(get_correlation_folder('loan')/'amount_duration.jpg')
+    plt.clf()
+
+    # df["payments X duration"] = df["payments"] * df["duration"] 
+    # sns.relplot(data=df, y="amount", x="payments X duration", hue="loan_status", sizes=(40, 400), alpha=.8,height=6)
+    # plt.savefig(get_correlation_folder('loan')/'amount_payments_duration.jpg')
+    # plt.clf()
+
 
 def loan_amount_status(df):
     # Amount  
