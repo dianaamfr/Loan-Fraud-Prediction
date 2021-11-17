@@ -7,9 +7,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(1, '.')
-
 from database import database
-
 db = database.Database('bank_database')
 
 def loan_train_du():
@@ -97,19 +95,19 @@ def loan_test_distribution(df):
 
 def loan_train_correlation(df):
     
-    # Correlation Matrix
-    # fig, ax = plt.subplots(figsize=(20, 15))
-    # sns.heatmap(
-    #         df.corr(), 
-    #         cmap = sns.diverging_palette(220, 10, as_cmap = True),
-    #         square=True, 
-    #         cbar=False,
-    #         ax=ax,
-    #         annot=True, 
-    #         linewidths=0.1,vmax=1.0, linecolor='white',
-    #         annot_kws={'fontsize':12 })
-    # plt.savefig(get_correlation_folder('loan')/'loan_train_correlation.jpg')
-    # plt.clf()
+    #Correlation Matrix
+    fig, ax = plt.subplots(figsize=(20, 15))
+    sns.heatmap(
+            df.corr(), 
+            cmap = sns.diverging_palette(220, 10, as_cmap = True),
+            square=True, 
+            cbar=False,
+            ax=ax,
+            annot=True, 
+            linewidths=0.1,vmax=1.0, linecolor='white',
+            annot_kws={'fontsize':12 })
+    plt.savefig(get_correlation_folder('loan')/'loan_train_correlation.jpg')
+    plt.clf()
 
     # Loan Amount, Duration and Payments
     sns.relplot(data=df, y="amount", x="payments", hue="loan_status", sizes=(40, 400), alpha=.8,height=6)

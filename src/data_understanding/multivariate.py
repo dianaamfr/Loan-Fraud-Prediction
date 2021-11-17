@@ -3,22 +3,26 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import *
+import sys
 
+sys.path.insert(1, '.')
+from database import database
+db = database.Database('bank_database')
 
 def loan_account_du():
-    df_loantrain=pd.read_csv(get_files_folder()/'loan_train.csv', delimiter=";", low_memory=False)
-    df_account=pd.read_csv(get_files_folder()/'loan_train.csv', delimiter=";", low_memory=False)
-    
+    df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
+    print(df.head())
     # DAYS BETWEEN ACCOUNT CREATION AND LOAN ISSUANCE 
 
     #Passar para datetime
-    df_loantrain['date'] = pd.to_datetime(df_loantrain['date'], format='%Y-%m-%d')
-    df_account['date'] = pd.to_datetime(df_loantrain['date'], format='%Y-%m-%d')
+    df['granted_date'] = pd.to_datetime(df['granted_date'], format='%Y%m%d', errors='coerce')
+    df['creation_date'] = pd.to_datetime(df['creation_date'], format='%Y%m%d', errors='coerce')
+    print(df.head())
+    df['days_between_statistics'] = df['granted_date'] - df['creation_date']
+    print(df.head())
 
-    df_loantrain['days_between_statistics'] = df_loantrain['date'] - df_account['date']
-
-    df_good = df_loantrain.loc[(df_loantrain['status'] == 1) ]
-    df_bad = df_loantrain.loc[(df_loantrain['status'] == -1) ]
+    df_good = df.loc[(df['loan_status'] == 1) ]
+    df_bad = df.loc[(df['loan_status'] == -1) ]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='good', color='green', alpha=0.6)
@@ -27,7 +31,10 @@ def loan_account_du():
     ax2.set_title('Days Between Account Creation and Loan Issuance')
     ax1.legend()
     ax2.legend()
-    plt.show()
+
+    plt.savefig(get_correlation_folder('loan')/'loan_account_dates.jpg')
+    plt.clf()
+    
 
 
 
