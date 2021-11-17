@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from utils import *
 from pathlib import Path
 import sys
+from matplotlib.ticker import PercentFormatter
 
 sys.path.insert(1, '.')
 from database import database
@@ -138,12 +139,23 @@ def loan_amount_status(df):
     print("Number of status -1: ",df_bad.shape[0])
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-    df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6)
-    df_bad.amount.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6)
+    df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
+     weights=np.ones(len(df_good.amount)) / len(df_good.amount))
+
+    df_bad.amount.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+     weights=np.ones(len(df_bad.amount)) / len(df_bad.amount))
+
+    ax1.set_ylim([0,0.16])
+    ax2.set_ylim([0,0.16])
+
     ax1.set_title('Loan Amount')
     ax2.set_title('Loan Amount')
     ax1.legend()
     ax2.legend()
+
+    ax1.yaxis.set_major_formatter(PercentFormatter(1)) 
+    ax2.yaxis.set_major_formatter(PercentFormatter(1)) 
+
     plt.savefig(get_distribution_folder('loan')/'loan_train_amount_status.jpg')
     plt.clf()
 

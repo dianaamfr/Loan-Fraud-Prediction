@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import *
 import sys
+from matplotlib.ticker import PercentFormatter
 
 sys.path.insert(1, '.')
 from database import database
@@ -11,32 +12,40 @@ db = database.Database('bank_database')
 
 def loan_account_du():
     df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
-    print(df.head())
-    # DAYS BETWEEN ACCOUNT CREATION AND LOAN ISSUANCE 
 
-    #Passar para datetime
+    # DAYS BETWEEN ACCOUNT CREATION AND LOAN ISSUANCE 
+    df['granted_date'] = df['granted_date'].apply(lambda x: int('19'+str(x)))
     df['granted_date'] = pd.to_datetime(df['granted_date'], format='%Y%m%d', errors='coerce')
+    df['creation_date'] = df['creation_date'].apply(lambda x: int('19'+str(x)))
     df['creation_date'] = pd.to_datetime(df['creation_date'], format='%Y%m%d', errors='coerce')
-    print(df.head())
+
     df['days_between_statistics'] = df['granted_date'] - df['creation_date']
-    print(df.head())
 
     df_good = df.loc[(df['loan_status'] == 1) ]
     df_bad = df.loc[(df['loan_status'] == -1) ]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='good', color='green', alpha=0.6)
-    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='bad', color='red', alpha=0.6)
+    
+    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='good', color='green', alpha=0.6, 
+     weights=np.ones(len(df_good.days_between_statistics.dt.days)) / len(df_good.days_between_statistics.dt.days))
+   
+    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='bad', color='red', alpha=0.6,
+     weights=np.ones(len(df_bad.days_between_statistics.dt.days)) / len(df_bad.days_between_statistics.dt.days))
+    
+    ax1.set_ylim([0,0.15])
+    ax2.set_ylim([0,0.15])
+
     ax1.set_title('Days Between Account Creation and Loan Issuance')
     ax2.set_title('Days Between Account Creation and Loan Issuance')
     ax1.legend()
     ax2.legend()
 
+    ax1.yaxis.set_major_formatter(PercentFormatter(1)) 
+    ax2.yaxis.set_major_formatter(PercentFormatter(1)) 
+
     plt.savefig(get_correlation_folder('loan')/'loan_account_dates.jpg')
     plt.clf()
     
-
-
 
 def loan_district_du():
     # PIE CHART PERCENTAGE OF GOOD LOANS FOR DISTRICT
@@ -82,8 +91,6 @@ def loan_district_du():
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
     plt.show()
-
-
 
 
 if __name__ == '__main__':
