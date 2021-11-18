@@ -17,6 +17,8 @@ def loan_train_du():
     loan_train_distribution(df.copy())
     loan_train_correlation(df.copy())
     loan_amount_status(df.copy())
+    loan_duration_status(df.copy())
+    loan_payments_status(df.copy())
 
 def loan_train_distribution(df):  
     sns.histplot(df['granted_date'])
@@ -131,14 +133,11 @@ def loan_train_correlation(df):
 
 
 def loan_amount_status(df):
-    # Amount  
-    df_good = df.loc[(df['loan_status'] == 1) ]
-    df_bad = df.loc[(df['loan_status'] == -1) ]
-
-    print("Number of status 1: ",df_good.shape[0])
-    print("Number of status -1: ",df_bad.shape[0])
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
     df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
      weights=np.ones(len(df_good.amount)) / len(df_good.amount))
 
@@ -148,8 +147,8 @@ def loan_amount_status(df):
     ax1.set_ylim([0,0.16])
     ax2.set_ylim([0,0.16])
 
-    ax1.set_title('Loan Amount')
-    ax2.set_title('Loan Amount')
+    ax1.set_title('Good Loan Amount')
+    ax2.set_title('Bad Loan Amount')
     ax1.legend()
     ax2.legend()
 
@@ -157,6 +156,55 @@ def loan_amount_status(df):
     ax2.yaxis.set_major_formatter(PercentFormatter(1)) 
 
     plt.savefig(get_distribution_folder('loan')/'loan_train_amount_status.jpg')
+    plt.clf()
+
+def loan_duration_status(df):
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+    df_good.duration.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
+     weights=np.ones(len(df_good.duration)) / len(df_good.duration))
+
+    df_bad.duration.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+     weights=np.ones(len(df_bad.duration)) / len(df_bad.duration))
+
+    ax1.set_ylim([0,0.25])
+    ax2.set_ylim([0,0.25])
+
+    ax1.set_title('Good Loan Duration')
+    ax2.set_title('Bad Loan Duration')
+    ax1.legend()
+    ax2.legend()
+
+    ax1.yaxis.set_major_formatter(PercentFormatter(1))
+    ax2.yaxis.set_major_formatter(PercentFormatter(1))
+
+    plt.savefig(get_distribution_folder('loan')/'loan_train_duration_status.jpg')
+    plt.clf()
+
+def loan_payments_status(df):
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+    df_good.payments.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
+     weights=np.ones(len(df_good.payments)) / len(df_good.payments))
+
+    df_bad.payments.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+     weights=np.ones(len(df_bad.payments)) / len(df_bad.payments))
+
+    ax1.set_title('Good Loan Payments')
+    ax2.set_title('Bad Loan Payments')
+    ax1.legend()
+    ax2.legend()
+
+    ax1.yaxis.set_major_formatter(PercentFormatter(1))
+    ax2.yaxis.set_major_formatter(PercentFormatter(1))
+
+    plt.savefig(get_distribution_folder('loan')/'loan_train_payments_status.jpg')
     plt.clf()
 
 if __name__ == '__main__':
