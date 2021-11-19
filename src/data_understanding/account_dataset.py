@@ -62,6 +62,30 @@ def district_id_status():
     plt.savefig(get_correlation_folder('account')/'district_id_status.jpg')
     plt.clf()
 
+def frequency_status():
+    df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
+
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
+
+    x_axis = np.arange(df['frequency'].nunique())
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    plt.bar(x_axis - 0.2, df_good['frequency'].value_counts()/len(df_good), 0.4, label = 'status 1', color='green', alpha=0.6)
+    plt.bar(x_axis + 0.2, df_bad['frequency'].value_counts()/len(df_bad), 0.4, label = 'status -1', color='red', alpha=0.6)
+
+    plt.xticks(x_axis, df['frequency'].unique())
+    plt.xlabel("Frequency", labelpad=10)
+    plt.ylabel("Count", labelpad=10)
+    plt.title("Frequency Count")
+    plt.legend()
+     
+    ax.yaxis.set_major_formatter(PercentFormatter(1))
+
+    plt.savefig(get_correlation_folder('account')/'frequency_status.jpg')
+    plt.clf()
+
 # Days between account creation and loan issuance
 def days_between_account_loan():
     df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
@@ -104,4 +128,5 @@ if __name__ == '__main__':
     create_plots_folders('account') # TODO: move to exploration.py file
     account_du()
     district_id_status()
+    frequency_status()
     days_between_account_loan()
