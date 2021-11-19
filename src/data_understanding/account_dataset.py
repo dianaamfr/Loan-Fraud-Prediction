@@ -97,15 +97,15 @@ def days_between_account_loan():
 
     df['days_between_statistics'] = df['granted_date'] - df['creation_date']
 
-    df_good = df.loc[(df['loan_status'] == 1) ]
-    df_bad = df.loc[(df['loan_status'] == -1) ]
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     
-    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='good', color='green', alpha=0.6, 
+    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
      weights=np.ones(len(df_good.days_between_statistics.dt.days)) / len(df_good.days_between_statistics.dt.days))
    
-    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='bad', color='red', alpha=0.6,
+    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
      weights=np.ones(len(df_bad.days_between_statistics.dt.days)) / len(df_bad.days_between_statistics.dt.days))
 
     ax1.set_ylim([0,0.15])
@@ -122,6 +122,70 @@ def days_between_account_loan():
     plt.savefig(get_correlation_folder('account')/'loan_account_dates.jpg')
     plt.clf()
 
+# Dates of the loans issuance # TODO -> Meter só os anos ; O gráfico tem algum valor?
+def date_loan_issued():
+    df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
+
+    df['granted_date'] = df['granted_date'].apply(lambda x: int('19'+str(x)))
+    df['granted_date'] = pd.to_datetime(df['granted_date'], format='%Y%m%d', errors='coerce')
+
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+    df_good.granted_date.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
+     weights=np.ones(len(df_good.granted_date)) / len(df_good.granted_date))
+   
+    df_bad.granted_date.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+     weights=np.ones(len(df_bad.granted_date)) / len(df_bad.granted_date))
+
+    ax1.set_ylim([0,0.14])
+    ax2.set_ylim([0,0.14])
+
+    ax1.set_title('Loan Issuance Dates')
+    ax2.set_title('Loan Issuance Dates')
+    ax1.legend()
+    ax2.legend()
+
+    ax1.yaxis.set_major_formatter(PercentFormatter(1)) 
+    ax2.yaxis.set_major_formatter(PercentFormatter(1)) 
+
+    plt.savefig(get_correlation_folder('account')/'loan_issuance_dates.jpg')
+    plt.clf()
+
+# Dates of the accounts creation # TODO -> Meter só os anos ; O gráfico tem algum valor?
+def date_account_creation():
+    df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
+
+    df['creation_date'] = df['creation_date'].apply(lambda x: int('19'+str(x)))
+    df['creation_date'] = pd.to_datetime(df['creation_date'], format='%Y%m%d', errors='coerce')
+
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+    df_good.creation_date.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
+     weights=np.ones(len(df_good.creation_date)) / len(df_good.creation_date))
+   
+    df_bad.creation_date.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+     weights=np.ones(len(df_bad.creation_date)) / len(df_bad.creation_date))
+
+    ax1.set_ylim([0,0.16])
+    ax2.set_ylim([0,0.16])
+
+    ax1.set_title('Account Creation Dates')
+    ax2.set_title('Account Creation Dates')
+    ax1.legend()
+    ax2.legend()
+
+    ax1.yaxis.set_major_formatter(PercentFormatter(1)) 
+    ax2.yaxis.set_major_formatter(PercentFormatter(1)) 
+
+    plt.savefig(get_correlation_folder('account')/'account_creation_dates.jpg')
+    plt.clf()
+
 if __name__ == '__main__':
     Path("data_understanding/plots/distribution/account").mkdir(parents=True, exist_ok=True)
     print("### ACCOUNT ###")
@@ -129,4 +193,6 @@ if __name__ == '__main__':
     account_du()
     district_id_status()
     frequency_status()
+    date_loan_issued()
+    date_account_creation()
     days_between_account_loan()
