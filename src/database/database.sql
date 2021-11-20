@@ -182,16 +182,16 @@ IGNORE 1 ROWS
 -- Create and Load Transaction Train Table
 
 CREATE TABLE IF NOT EXISTS trans_train (
-    trans_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    trans_date DECIMAL NOT NULL,
+    trans_id INT NOT NULL,
+    account_id INT NOT NULL,
+    trans_date INT NOT NULL,
     trans_type VARCHAR(20) NOT NULL,
     operation VARCHAR(20),
-    amount DECIMAL NOT NULL,
-    balance DECIMAL NOT NULL,
+    amount INT NOT NULL,
+    balance INT NOT NULL,
     k_symbol VARCHAR(20),
     bank VARCHAR(20),
-    account DECIMAL
+    account INT
 );
 
 LOAD DATA LOCAL INFILE  
@@ -206,16 +206,16 @@ IGNORE 1 ROWS
 -- Create and Load Transaction Test Table
 
 CREATE TABLE trans_test (
-    trans_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    trans_date DECIMAL NOT NULL,
+    trans_id INT NOT NULL,
+    account_id INT NOT NULL,
+    trans_date INT NOT NULL,
     trans_type VARCHAR(20) NOT NULL,
     operation VARCHAR(20),
-    amount DECIMAL NOT NULL,
-    balance DECIMAL NOT NULL,
+    amount INT NOT NULL,
+    balance INT NOT NULL,
     k_symbol VARCHAR(20),
     bank VARCHAR(20),
-    account DECIMAL
+    account INT
 );
 
 LOAD DATA LOCAL INFILE  

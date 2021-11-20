@@ -8,7 +8,9 @@ import sys
 from matplotlib.ticker import PercentFormatter
 
 sys.path.insert(1, '.')
+
 from database import database
+
 db = database.Database('bank_database')
 
 def loan_train_du():
@@ -56,7 +58,6 @@ def loan_train_distribution(df):
     sns.countplot(x ='loan_status', data = df)
     plt.savefig(get_distribution_folder('loan')/'loan_train_status.jpg')
     plt.clf()
-
 
 def loan_test_du():
     df = db.df_query('SELECT * FROM loan_test')
