@@ -14,9 +14,9 @@ def disp_distribution(df):
     # Disposition Dataset
     print()
     sns.countplot(x ='type', data = df)
-    plt.savefig('plots/distribution/disp/type.jpg')
+    plt.savefig('data_understanding/plots/distribution/disp/type.jpg')
     plt.clf()
 
 if __name__ == '__main__':
-    Path("plots/distribution/disp").mkdir(parents=True, exist_ok=True)
+    Path("data_understanding/plots/distribution/disp").mkdir(parents=True, exist_ok=True)
     disp_du()
