@@ -1,0 +1,9 @@
+utils/data.csv
+kaggle.json
+env/
+__pycache__
+
+src/data_understanding/plots/**/**
+
+
+images/Screenshot from 2021-11-15 09-19-31.png
