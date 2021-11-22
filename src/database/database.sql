@@ -36,10 +36,10 @@ IGNORE 1 ROWS
 -- Create and Load Card Train Table
 
 CREATE TABLE IF NOT EXISTS card_train (
-    card_id DECIMAL NOT NULL,
-    disp_id DECIMAL NOT NULL,
+    card_id INT NOT NULL,
+    disp_id INT NOT NULL,
     card_type VARCHAR(20) NOT NULL,
-    issued DECIMAL NOT NULL
+    issued INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
@@ -54,10 +54,10 @@ IGNORE 1 ROWS
 -- Create and Load Card Test Table
 
 CREATE TABLE IF NOT EXISTS card_test (
-    card_id DECIMAL NOT NULL,
-    disp_id DECIMAL NOT NULL,
+    card_id INT NOT NULL,
+    disp_id INT NOT NULL,
     card_type VARCHAR(20) NOT NULL,
-    issued DECIMAL NOT NULL
+    issued INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
@@ -107,22 +107,22 @@ IGNORE 1 ROWS
 -- Create and Load District Table
 
 CREATE TABLE IF NOT EXISTS district (
-    district_id DECIMAL NOT NULL,
+    district_id INT NOT NULL,
     district_name VARCHAR(20) NOT NULL,
     region VARCHAR(20) NOT NULL,
-    nr_inhabitants DECIMAL NOT NULL,
-    nr_municip_inhabitants_499 DECIMAL NOT NULL,
-    nr_municip_inhabitants_500_1999 DECIMAL NOT NULL,
-    nr_municip_inhabitants_2000_9999 DECIMAL NOT NULL,
-    nr_municip_inhabitants_10000 DECIMAL NOT NULL,
-    nr_cities DECIMAL NOT NULL,
-    ratio_urban_inhabitants DECIMAL NOT NULL,
-    average_salary DECIMAL NOT NULL,
+    nr_inhabitants INT NOT NULL,
+    nr_municip_inhabitants_499 INT NOT NULL,
+    nr_municip_inhabitants_500_1999 INT NOT NULL,
+    nr_municip_inhabitants_2000_9999 INT NOT NULL,
+    nr_municip_inhabitants_10000 INT NOT NULL,
+    nr_cities INT NOT NULL,
+    ratio_urban_inhabitants FLOAT NOT NULL,
+    average_salary FLOAT NOT NULL,
     unemployment_rate_95 VARCHAR(20) NOT NULL,
-    unemployment_rate_96 DECIMAL NOT NULL,
-    nr_enterpreneurs_1000_inhabitants DECIMAL NOT NULL,
+    unemployment_rate_96 FLOAT NOT NULL,
+    nr_enterpreneurs_1000_inhabitants INT NOT NULL,
     nr_commited_crimes_95 VARCHAR(20) NOT NULL,
-    nr_commited_crimes_96 DECIMAL NOT NULL
+    nr_commited_crimes_96 INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
@@ -182,16 +182,16 @@ IGNORE 1 ROWS
 -- Create and Load Transaction Train Table
 
 CREATE TABLE IF NOT EXISTS trans_train (
-    trans_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    trans_date DECIMAL NOT NULL,
+    trans_id INT NOT NULL,
+    account_id INT NOT NULL,
+    trans_date INT NOT NULL,
     trans_type VARCHAR(20) NOT NULL,
     operation VARCHAR(20),
-    amount DECIMAL NOT NULL,
-    balance DECIMAL NOT NULL,
+    amount INT NOT NULL,
+    balance INT NOT NULL,
     k_symbol VARCHAR(20),
     bank VARCHAR(20),
-    account DECIMAL
+    account INT
 );
 
 LOAD DATA LOCAL INFILE  
@@ -206,16 +206,16 @@ IGNORE 1 ROWS
 -- Create and Load Transaction Test Table
 
 CREATE TABLE trans_test (
-    trans_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    trans_date DECIMAL NOT NULL,
+    trans_id INT NOT NULL,
+    account_id INT NOT NULL,
+    trans_date INT NOT NULL,
     trans_type VARCHAR(20) NOT NULL,
     operation VARCHAR(20),
-    amount DECIMAL NOT NULL,
-    balance DECIMAL NOT NULL,
+    amount INT NOT NULL,
+    balance INT NOT NULL,
     k_symbol VARCHAR(20),
     bank VARCHAR(20),
-    account DECIMAL
+    account INT
 );
 
 LOAD DATA LOCAL INFILE  

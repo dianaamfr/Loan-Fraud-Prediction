@@ -1,155 +1,173 @@
+from statsmodels.graphics.gofplots import qqplot
+import sys
+from scipy.stats import norm
 import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import *
-from pathlib import Path
+
+sys.path.insert(1, '.')
+from database import database
+db = database.Database('bank_database')
 
 def district_du():
-    df = pd.read_csv(get_files_folder()/'district.csv', delimiter=";", low_memory=False)
+    df = db.df_query('SELECT * FROM district')
+    # Drop NaN values
+    df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
+    df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
+    df.dropna(inplace=True) # Remove NaN values
+
     stats(df)
     district_distribution(df)
+    district_correlation(df.copy())
+    variable_relations(df.copy())
+    loan_relations()
 
 def district_distribution(df):
     # Region
-    print()
     sns.countplot(x ='region', data = df)
-    plt.savefig('data_understanding/plots/distribution/district/region.jpg')
+    plt.savefig(get_distribution_folder('district')/'/region.jpg')
     plt.clf()
 
     # Inhabitants No
-    sns.histplot(df['no. of inhabitants'])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_no.jpg')
+    sns.histplot(df['nr_inhabitants'])
+    plt.savefig(get_distribution_folder('district')/'/inhabitants_no.jpg')
     plt.clf()
 
-    plt.boxplot(df['no. of inhabitants'])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_no_boxplot.jpg')
-    plt.clf()
-
-    df['no. of inhabitants'] = np.log(df['no. of inhabitants']) # log transformation
-    sns.histplot(df['no. of inhabitants'])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_no_log.jpg')
+    plt.boxplot(df['nr_inhabitants'])
+    plt.savefig(get_distribution_folder('district')/'/inhabitants_no_boxplot.jpg')
     plt.clf()
 
     # Municipalities
-    sns.histplot(df['no. of municipalities with inhabitants < 499 '])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_499.jpg')
+    sns.histplot(df['nr_municip_inhabitants_499'])
+    plt.savefig(get_distribution_folder('district')/'/inhabitants_499.jpg')
     plt.clf()
 
-    df['no. of municipalities with inhabitants < 499 '] = np.log(df['no. of municipalities with inhabitants < 499 ']) # log transformation
-    sns.histplot(df['no. of municipalities with inhabitants < 499 '])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_499_log.jpg')
+    sns.histplot(df['nr_municip_inhabitants_500_1999'])
+    plt.savefig(get_distribution_folder('district')/'/inhabitants_500_1999.jpg')
     plt.clf()
 
-    sns.histplot(df['no. of municipalities with inhabitants 500-1999'])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_500_1999.jpg')
+    sns.histplot(df['nr_municip_inhabitants_2000_9999'])
+    plt.savefig(get_distribution_folder('district')/'/inhabitants_2000_9999.jpg')
     plt.clf()
 
-    df['no. of municipalities with inhabitants 500-1999'] = np.log(df['no. of municipalities with inhabitants 500-1999']) # log transformation
-    sns.histplot(df['no. of municipalities with inhabitants 500-1999'])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_500_1999_log.jpg')
+    sns.histplot(df['nr_municip_inhabitants_10000'])
+    plt.savefig(get_distribution_folder('district')/'/inhabitants_10000.jpg')
     plt.clf()
-
-    sns.histplot(df['no. of municipalities with inhabitants 2000-9999 '])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_2000_9999.jpg')
-    plt.clf()
-
-    df['no. of municipalities with inhabitants 2000-9999 '] = np.log(df['no. of municipalities with inhabitants 2000-9999 ']) # log transformation
-    sns.histplot(df['no. of municipalities with inhabitants 2000-9999 '])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_2000_1999_log.jpg')
-    plt.clf()
-
-
-    sns.histplot(df['no. of municipalities with inhabitants >10000 '])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_10000.jpg')
-    plt.clf()
-    
-    df['no. of municipalities with inhabitants >10000 '] = np.log(df['no. of municipalities with inhabitants >10000 ']) # log transformation
-    sns.histplot(df['no. of municipalities with inhabitants >10000 '])
-    plt.savefig('data_understanding/plots/distribution/district/inhabitants_10000_log.jpg')
-    plt.clf()
-
 
     # Cities
-    sns.histplot(df['no. of cities '])
-    plt.savefig('data_understanding/plots/distribution/district/cities.jpg')
-    plt.clf()
-    df['no. of cities '] = np.log(df['no. of cities ']) # log transformation
-    sns.histplot(df['no. of cities '])
-    plt.savefig('data_understanding/plots/distribution/district/cities_log.jpg')
+    sns.histplot(df['nr_cities'])
+    plt.savefig(get_distribution_folder('district')/'/cities.jpg')
     plt.clf()
 
     # Inhabitants Ratio
-    sns.histplot(df['ratio of urban inhabitants '])
-    plt.savefig('data_understanding/plots/distribution/district/urban_inhabitants_ratio.jpg')
-    plt.clf()
-    df['ratio of urban inhabitants '] = np.log(df['ratio of urban inhabitants ']) # log transformation
-    sns.histplot(df['ratio of urban inhabitants '])
-    plt.savefig('data_understanding/plots/distribution/district/urban_inhabitants_ratio_log.jpg')
+    sns.histplot(df['ratio_urban_inhabitants'])
+    plt.savefig(get_distribution_folder('district')/'/urban_inhabitants_ratio.jpg')
     plt.clf()
 
-
-    sns.histplot(df['average salary '])
-    plt.savefig('data_understanding/plots/distribution/district/salary.jpg')
+    sns.histplot(df['average_salary'])
+    plt.savefig(get_distribution_folder('district')/'/salary.jpg')
     plt.clf()
 
-    df['average salary '] = np.log(df['average salary ']) # log transformation
-    sns.histplot(df['average salary '])
-    plt.savefig('data_understanding/plots/distribution/district/salary_log.jpg')
+    # Unemployment Rate
+    sns.histplot(df["unemployment_rate_95"])
+    plt.savefig(get_distribution_folder('district')/'/unemploymant_rate_95.jpg')
     plt.clf()
 
-    df["unemploymant rate '95 "] = pd.to_numeric(df["unemploymant rate '95 "], errors='coerce')
-    print("Na values in unemploymant rate '95", df["unemploymant rate '95 "].isna().sum())
-    #df["unemploymant rate '95 "].dropna()
-    sns.histplot(df["unemploymant rate '95 "])
-    plt.savefig('data_understanding/plots/distribution/district/unemploymant_rate_95.jpg')
-    plt.clf()
-    df["unemploymant rate '95 "] = np.log(df["unemploymant rate '95 "]) # log transformation
-    sns.histplot(df["unemploymant rate '95 "])
-    plt.savefig('data_understanding/plots/distribution/district/unemploymant_rate_95_log.jpg')
+    qqplot(df['unemployment_rate_95'],norm,fit=True,line="45")
+    plt.savefig(get_distribution_folder('district')/'/unemploymant_rate_95_qqplot.jpg')
     plt.clf()
 
-    sns.histplot(df["unemploymant rate '96 "])
-    plt.savefig('data_understanding/plots/distribution/district/unemploymant_rate_96.jpg')
+    sns.histplot(df["unemployment_rate_96"])
+    plt.savefig(get_distribution_folder('district')/'/unemploymant_rate_96.jpg')
     plt.clf()
 
-    df["unemploymant rate '96 "] = np.log(df["unemploymant rate '96 "]) # log transformation
-    sns.histplot(df["unemploymant rate '96 "])
-    plt.savefig('data_understanding/plots/distribution/district/unemploymant_rate_96_log.jpg')
+    sns.histplot(df['nr_enterpreneurs_1000_inhabitants'])
+    plt.savefig(get_distribution_folder('district')/'/enterpreneurs.jpg')
     plt.clf()
 
-    sns.histplot(df['no. of enterpreneurs per 1000 inhabitants '])
-    plt.savefig('data_understanding/plots/distribution/district/enterpreneurs.jpg')
+    # Commited Crimes
+    sns.histplot(df["nr_commited_crimes_95"])
+    plt.savefig(get_distribution_folder('district')/'/crimes_95.jpg')
     plt.clf()
 
-    df['no. of enterpreneurs per 1000 inhabitants '] = np.log(df['no. of enterpreneurs per 1000 inhabitants ']) # log transformation
-    sns.histplot(df['no. of enterpreneurs per 1000 inhabitants '])
-    plt.savefig('data_understanding/plots/distribution/district/enterpreneurs_log.jpg')
+    plt.boxplot(df['nr_commited_crimes_95'])
+    plt.savefig(get_distribution_folder('district')/'/crimes_95_boxplot.jpg')
     plt.clf()
 
-    df["no. of commited crimes '95 "] = pd.to_numeric(df["no. of commited crimes '95 "], errors='coerce')
-    print("Na values in no. of commited crimes '95 ", df["no. of commited crimes '95 "].isna().sum())
-    #df["no. of commited crimes '95 "].dropna()
-    sns.histplot(df["no. of commited crimes '95 "])
-    plt.savefig('data_understanding/plots/distribution/district/crimes_95.jpg')
+    sns.histplot(df["nr_commited_crimes_96"])
+    plt.savefig(get_distribution_folder('district')/'/crimes_96.jpg')
     plt.clf()
 
-    df["no. of commited crimes '95 "] = np.log(df["no. of commited crimes '95 "]) # log transformation
-    sns.histplot(df["no. of commited crimes '95 "])
-    plt.savefig('data_understanding/plots/distribution/district/crimes_95_log.jpg')
+    plt.boxplot(df['nr_commited_crimes_96'])
+    plt.savefig(get_distribution_folder('district')/'/crimes_96_boxplot.jpg')
     plt.clf()
 
-
-    sns.histplot(df["no. of commited crimes '96 "])
-    plt.savefig('data_understanding/plots/distribution/district/crimes_96.jpg')
+def district_correlation(df):
+    corrMatrix = df.corr()
+    plt.figure(figsize=(20,15))
+    ax=plt.subplot(111)
+    sns.heatmap(corrMatrix,ax=ax, annot=True)
+    plt.savefig(get_correlation_folder('district')/'/district.jpg')
     plt.clf()
 
-    df["no. of commited crimes '96 "] = np.log(df["no. of commited crimes '96 "]) # log transformation
-    sns.histplot(df["no. of commited crimes '96 "])
-    plt.savefig('data_understanding/plots/distribution/district/crimes_96_log.jpg')
+def variable_relations(df):
+
+    # Compare nr commited crimes 
+    sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig(get_correlation_folder('district')/'/commited_crimes_95_96.jpg')
     plt.clf()
 
+    # Compare nr inhabitants
+    sns.relplot(data=district_df, y="unemployment_rate_95", x="unemployment_rate_96", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig(get_correlation_folder('district')/'/unemployment_95_96.jpg')
+    plt.clf()
+
+    # Inhabitants and salary
+    sns.relplot(data=district_df, y="ratio_urban_inhabitants", x="nr_inhabitants", hue="average_salary", size="average_salary",sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig(get_correlation_folder('district')/'/inhabitants_salary.jpg')
+    plt.clf()
+
+    # Inhabitants and average salary
+    g = sns.relplot(data=district_df, y="average_salary", x="nr_inhabitants", sizes=(40, 400), alpha=.8, height=6)
+    plt.savefig(get_correlation_folder('district')/'/inhabitants_salary2.jpg')
+    plt.clf()
+
+    # Inhabitants and commited crimes 96
+    sns.relplot(data=district_df, y="nr_commited_crimes_96", x="nr_inhabitants", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig(get_correlation_folder('district')/'/inhabitants_crimes_96.jpg')
+    plt.clf()
+
+    # Inhabitants and commited crimes 95
+    sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_inhabitants", sizes=(40, 400), alpha=.8,height=6)
+    plt.savefig(get_correlation_folder('district')/'/inhabitants_crimes_95.jpg')
+    plt.clf()
+
+    g = sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", hue="average_salary", size="average_salary", sizes=(10, 400), alpha=0.8)
+    g.set(xscale="log")
+    g.set(yscale="log")
+    plt.savefig(get_correlation_folder('district')/'/crimes_salary.jpg')
+    plt.clf()
+
+def loan_relations():
+    loan_df = db.df_query('SELECT * FROM loan_train')
+    district_df = db.df_query('SELECT * FROM district')
+    account_df = db.df_query('SELECT * FROM account')
+
+    district_df["nr_commited_crimes_95"] = pd.to_numeric(district_df["nr_commited_crimes_95"], errors='coerce')
+    district_df["unemployment_rate_95"] = pd.to_numeric(district_df["unemployment_rate_95"], errors='coerce')
+    district_df.dropna(inplace=True) # Remove NaN values
+
+    merged_df = pd.merge(loan_df, account_df, how="inner",on="account_id")
+    merged_df = pd.merge(merged_df, district_df, how="inner",on="district_id")
+
+    corrMatrix = merged_df.corr()
+    plt.figure(figsize=(20,15))
+    ax=plt.subplot(111)
+    sns.heatmap(corrMatrix,ax=ax, annot=True)
+    plt.savefig(get_correlation_folder('district')/'/district_loan.jpg')
+    plt.clf()
 
 if __name__ == '__main__':
-    Path("data_understanding/plots/distribution/district").mkdir(parents=True, exist_ok=True)
+    create_plots_folders('district')
     district_du()

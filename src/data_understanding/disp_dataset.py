@@ -1,10 +1,16 @@
+import sys
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from src.data_understanding.utils.utils import get_distribution_folder
 from utils import *
-from pathlib import Path
 
+sys.path.insert(1, '.')
+from database import database
+db = database.Database('bank_database')
+
+# TODO - change to use DB
 def disp_du():
     df = pd.read_csv(get_files_folder()/'disp.csv', delimiter=";", low_memory=False)
     stats(df)
@@ -12,11 +18,10 @@ def disp_du():
 
 def disp_distribution(df):
     # Disposition Dataset
-    print()
     sns.countplot(x ='type', data = df)
-    plt.savefig('data_understanding/plots/distribution/disp/type.jpg')
+    plt.savefig(get_distribution_folder('disp')/'type.jpg')
     plt.clf()
 
 if __name__ == '__main__':
-    Path("data_understanding/plots/distribution/disp").mkdir(parents=True, exist_ok=True)
+    create_plots_folders('disp')
     disp_du()

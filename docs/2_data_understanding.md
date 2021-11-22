@@ -5,19 +5,29 @@
 We may need to split this atttribute into 'gender' and 'birth_date'.
 
 # District
-- Unemploymant rate '95 is of type object, but should be floa. There is an observation with unemployment rate '95 = '?'.
+- Unemploymant rate '95 is of type object, but should be float. There is an observation with unemployment rate '95 = '?'. It does not follow a normal distribution so we shouldn't replace it with the mean.
+![](../images/unemploymant_rate_95_qqplot.jpg)
+
 - The attribute no. of commited crimes '95 is of type object but should be of type int. There is an observation with no. of commiter crimes '95 = '?' 
 
-- Possible outlier in the 'no. of inhabitants' (max = 1204953, others in range [42821, 387570] )
-![](../images/district_inhabitants_distplot.png)
-![](../images/district_inhabitants_boxplot.png)
+- Outlier in the 'no. of inhabitants'
+![](../images/inhabitants_no.png)
+![](../images/inhabitants_no_boxplot.png)
 
-- Possible outlier in no. of crimes '95 e '96
-![](../images/district_commited_crimes.png)
-![](../images/district_commited_crimes2.png)
+- Outlier in no. of crimes '95
+![](../images/crimes_95.jpg)
+![](../images/crimes_95_boxplot.jpg)
+
+- Outlier in no. of crimes '96
+![](../images/crimes_96.jpg)
+![](../images/crimes_96_boxplot.jpg)
+
+- 
 
 # Loan Train
-- The number of successful loans is much higher(TODO) than the number of fraudulent loans(46)
+- The number of successful loans is much higher(TODO) than the number of fraudulent loans(46) - status is unbalanced.
+- Amount/Duration = Payments
+![](../images/amount_payments_duration.jpg)
 
 # Loan Test
 - 354 null values in status
