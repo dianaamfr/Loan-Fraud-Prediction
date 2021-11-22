@@ -9,15 +9,17 @@ import sys
 sys.path.insert(1, '.')
 
 from database import database
+from datetime import datetime
 
 db = database.Database('bank_database')
 
 def loan_train_du():
     df = db.df_query('SELECT * FROM loan_train')
-    stats(df)
-    loan_train_distribution(df)
-    loan_train_correlation(df)
-    loan_amount_status(df)
+   # stats(df)
+   # loan_train_distribution(df)
+   # loan_train_correlation(df)
+   # loan_amount_status(df)
+    client_age_on_loan()
 
 def loan_train_distribution(df):  
     sns.histplot(df['granted_date'])
@@ -126,11 +128,42 @@ def loan_amount_status(df):
     plt.savefig('data_understanding/plots/distribution/loan/loan_train_amount_status.jpg')
     plt.clf()
 
+def client_age_on_loan():
+    df_loan = db.df_query('SELECT * FROM loan_train')
+    df_account = db.df_query('SELECT * FROM account')
+    df_disp = db.df_query('SELECT * FROM disposition')
+    df_client = db.df_query('SELECT * FROM client')
+
+    
+    # relacionar disp with account and client
+    merged_df = pd.merge(df_disp, df_client, how="inner",on="client_id")
+    merged_df = pd.merge(merged_df, df_account, how="inner",on="account_id")
+    merged_df = pd.merge(merged_df, df_loan, how="inner",on="account_id")
+
+    for index, row in merged_df.iterrows(): 
+        #birthDate
+        birth_str = str(merged_df['birth_number'][index])
+        if int(birth_str[2:4]) < 50:
+           merged_df['birth_number'][index] =datetime(int("19"+birth_str[0:2]),int(birth_str[2:4]),int(birth_str[4:6]))
+        else: 
+            merged_df["birth_number"][index] = datetime(int("19"+birth_str[0:2]), int(birth_str[2:4]) - 50, int(birth_str[4:6]))
+        #loan_date
+        merged_df["granted_date"][index] = datetime(int("19"+str(merged_df["granted_date"][index])[0:2]),int(str(merged_df["granted_date"][index])[2:4]),int(str(merged_df["granted_date"][index])[4:6]))
+
+    merged_df['client_age_on_loan'] = (merged_df['granted_date'] - merged_df['birth_number']).dt.days / 365
+    
+
+    sns.kdeplot( merged_df['client_age_on_loan'], shade=True)
+    plt.show()
+    plt.savefig('data_understanding/plots/correlation/loan/client_age_on_loan.jpg')
+    plt.clf()
+
 if __name__ == '__main__':
     Path("data_understanding/plots/distribution/loan").mkdir(parents=True, exist_ok=True)
     Path("data_understanding/plots/correlation/loan").mkdir(parents=True, exist_ok=True)
-    print("### LOAN TRAIN ###")
+    #print("### LOAN TRAIN ###")
     loan_train_du()
-    print()
-    print("### LOAN TEST ###")
-    loan_test_du()
+    #print()
+    #print("### LOAN TEST ###")
+    #loan_test_du()
+    

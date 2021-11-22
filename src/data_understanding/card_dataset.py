@@ -12,16 +12,16 @@ def card_train_du():
     # Card Train Dataset
     print()
     sns.countplot(x ='type', data = card_train_df)
-    plt.savefig('plots/distribution/card/card_train_type.jpg')
+    plt.savefig('data_understanding/plots/distribution/card/card_train_type.jpg')
     plt.clf()
     
     sns.histplot(card_train_df['issued'])
-    plt.savefig('plots/distribution/card/card_train_issued.jpg')
+    plt.savefig('data_understanding/plots/distribution/card/card_train_issued.jpg')
     plt.clf()
 
     card_train_df['issued'] = np.log(card_train_df['issued']) # log transformation
     sns.histplot(card_train_df['issued'])
-    plt.savefig('plots/distribution/card/card_train_issued_log.jpg')
+    plt.savefig('data_understanding/plots/distribution/card/card_train_issued_log.jpg')
     plt.clf()
 
 
@@ -32,19 +32,19 @@ def card_test_du():
     # Card Test Dataset
     print()
     sns.countplot(x ='type', data = card_test_df)
-    plt.savefig('plots/distribution/card/card_test_type.jpg')
+    plt.savefig('data_understanding/plots/distribution/card/card_test_type.jpg')
     plt.clf()
 
     sns.histplot(card_test_df['issued'])
-    plt.savefig('plots/distribution/card/card_test_issued.jpg')
+    plt.savefig('data_understanding/plots/distribution/card/card_test_issued.jpg')
     plt.clf()
 
     card_test_df['issued'] = np.log(card_test_df['issued']) # log transformation
     sns.histplot(card_test_df['issued'])
-    plt.savefig('plots/distribution/card/card_test_issued_log.jpg')
+    plt.savefig('data_understanding/plots/distribution/card/card_test_issued_log.jpg')
     plt.clf()
 
 if __name__ == '__main__':
-    Path("plots/distribution/card").mkdir(parents=True, exist_ok=True)
+    Path("data_understanding/plots/distribution/card").mkdir(parents=True, exist_ok=True)
     card_train_du()
     card_test_du()

@@ -100,7 +100,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE disposition
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (disp_id, client_id, account_id, disp_type);
 
