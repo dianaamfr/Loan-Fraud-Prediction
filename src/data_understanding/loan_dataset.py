@@ -19,6 +19,7 @@ def loan_train_du():
     loan_amount_status(df.copy())
     loan_duration_status(df.copy())
     loan_payments_status(df.copy())
+    client_age_on_loan()
 
 def loan_train_distribution(df):  
     sns.histplot(df['granted_date'])
@@ -232,7 +233,6 @@ def client_age_on_loan():
     
 
     sns.kdeplot( merged_df['client_age_on_loan'], shade=True)
-    plt.show()
     plt.savefig(get_correlation_folder('loan')/'client_age_on_loan.jpg')
     plt.clf()
 
