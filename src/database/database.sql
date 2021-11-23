@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS account;
 DROP TABLE IF EXISTS card_train;
 DROP TABLE IF EXISTS card_test;
 DROP TABLE IF EXISTS client;
-DROP TABLE IF EXISTS disp;
+DROP TABLE IF EXISTS disposition;
 DROP TABLE IF EXISTS district;
 DROP TABLE IF EXISTS loan_train;
 DROP TABLE IF EXISTS loan_test;
@@ -89,9 +89,9 @@ IGNORE 1 ROWS
 -- Create and Load Disposition Table
 
 CREATE TABLE IF NOT EXISTS disposition (
-    disp_id DECIMAL NOT NULL,
+    disp_id INT NOT NULL,
     client_id INT NOT NULL,
-    account_id DECIMAL NOT NULL,
+    account_id INT NOT NULL,
     disp_type VARCHAR(20) NOT NULL
 );
 
@@ -100,7 +100,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE disposition
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (disp_id, client_id, account_id, disp_type);
 
