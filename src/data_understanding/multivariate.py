@@ -54,5 +54,17 @@ def loan_district_du():
 
     plt.show()
 
+# TODO - global correlation matrix with the selected attributes
+def global_correlation_matrix():
+
+    df = db.df_query('SELECT * FROM loan')
+
+    corrMatrix = df.corr()
+    plt.figure(figsize=(20,15))
+    ax=plt.subplot(111)
+    sns.heatmap(corrMatrix,ax=ax, annot=True)
+    plt.savefig(get_correlation_folder('district')/'district.jpg')
+    plt.clf()
+
 if __name__ == '__main__':
     loan_district_du()

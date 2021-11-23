@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from src.data_understanding.utils.utils import get_distribution_folder
 from utils import *
 
 sys.path.insert(1, '.')

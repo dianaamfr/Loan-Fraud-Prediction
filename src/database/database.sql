@@ -73,8 +73,8 @@ IGNORE 1 ROWS
 
 CREATE TABLE IF NOT EXISTS client (
     client_id INT NOT NULL,
-    birth_number DECIMAL NOT NULL,
-    district_id DECIMAL NOT NULL
+    birth_number INT NOT NULL,
+    district_id INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  

@@ -10,9 +10,8 @@ sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
 
-# TODO - change to use DB
 def client_du():
-    df = pd.read_csv(get_files_folder()/'client.csv', delimiter=";", low_memory=False)
+    df =  db.df_query('SELECT * FROM client')
     stats(df)
     client_distribution(df)
 
