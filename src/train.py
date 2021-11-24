@@ -1,31 +1,27 @@
-import database
 import sys
 import joblib
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from pathlib import Path
 
-def train(args):
-    db = database.Database('bank_database')
-    feature_cols = ['granted_date', 'amount', 'duration', 'payments'] # TODO: Futuramente adicionar novas colunas
+def train(classifier_name, data_file, output_name):
+    df = pd.read_csv('clean_data/' + data_file + '-train.csv', delimiter=",", low_memory=False)
 
-    x_query = 'SELECT {0} FROM loan_train;'.format(','.join(feature_cols))
-    y_query = 'SELECT loan_status FROM loan_train;'
-
-    x = db.df_query(x_query)
-    y = db.df_query(y_query)
+    x = df.drop(columns=['loan_status'])
+    y = df['loan_status']
 
     # Split dataset into training set and test set
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=1)
 
-    classifier = get_classifier(args[0])
-
+    classifier = get_classifier(classifier_name)
+  
     cross_validation = KFold()
 
-    parameter_grid = get_parameter_grid(args[0])
+    parameter_grid = get_parameter_grid(classifier_name)
 
     grid_search = GridSearchCV(
         classifier, 
@@ -36,17 +32,16 @@ def train(args):
 
     grid_search.fit(x_train, y_train.values.ravel())
 
-    # TODO - change this?
     y_pred = grid_search.predict_proba(x_test)
     prob_loan = y_pred[::, 1]
     auc = roc_auc_score(y_test, prob_loan)
 
     print('Train Prediction:')
-    print(y_pred)
+    #print(y_pred)
     print(f"AUC: {auc}")
 
     models_folder = Path("models/")
-    filename = models_folder/(args[0] + '.sav')
+    filename = models_folder/(classifier_name + '-' + output_name + '.sav')
     joblib.dump(grid_search, filename)
 
 def get_classifier(classifier):
@@ -58,4 +53,4 @@ def get_parameter_grid(classifier):
         return {"C":np.logspace(-3,3,7), "penalty":["l2"]}
 
 if __name__ == "__main__":
-    train(sys.argv[1:])
+    train(sys.argv[1], sys.argv[2], sys.argv[3])

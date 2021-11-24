@@ -1,19 +1,18 @@
 import joblib
-import database
+from database import database
 import sys
 import pandas as pd
 from pathlib import Path
 
-def test(args):
-    db = database.Database('bank_database')
-    feature_cols = ['granted_date', 'amount', 'duration', 'payments']
+def test(classifier, data_file , output_name):
+    df = pd.read_csv('clean_data/' + data_file + '-test.csv', delimiter=",", low_memory=False)
 
     models_folder = Path("models/")
-    filename = models_folder/(args[0] + '.sav')
+    filename = models_folder/(classifier + '-' + output_name + '.sav')
     model = joblib.load(filename)
 
-    x_query_test = 'SELECT {0} FROM loan_test;'.format(','.join(feature_cols))
-    x_test = db.df_query(x_query_test)
+    x_test = df.drop(columns=['loan_id'])
+    print(x_test.head())
     prediction = model.predict_proba(x_test)[::,1]
 
     print('TEST PREDICTION:')
@@ -22,13 +21,12 @@ def test(args):
     # Create the pandas DataFrame
     df_result = pd.DataFrame()
 
-    loan_id_query = 'SELECT loan_id FROM loan_test;'
-    loan_ids = db.df_query(loan_id_query)
+    loan_ids = df['loan_id']
 
     df_result['Id'] = loan_ids
     df_result['Predicted'] = prediction
 
-    df_result.to_csv('results/results.csv', sep=',', index=False)
+    df_result.to_csv('results/' + classifier + '-' + output_name + '.csv', sep=',', index=False)
 
 if __name__ == "__main__":
-    test(sys.argv[1:])
+    test(sys.argv[1], sys.argv[2], sys.argv[3])
