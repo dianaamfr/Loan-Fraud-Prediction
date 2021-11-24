@@ -144,7 +144,7 @@ def clean2(output_name):
     ############
     # TRAIN DATA
     ############
-
+    from functools import reduce
     loan_train = clean_loans(db)
     district = clean_districts(db)
     client = clean_clients(db)
@@ -153,10 +153,10 @@ def clean2(output_name):
     disp = clean_disp(db)
     account = clean_account(db)
 
-    df = pd.merge(loan_train, account, how="inner",on="account_id")
-    df = pd.merge(df, disp, how="inner",on="account_id")
-    df = pd.merge(df, client, how="inner",on="client_id")
-    df = pd.merge(df, transaction_train, how="inner",on="account_id")
+    df = pd.merge(loan_train, account, on='account_id', how="left")
+    df = pd.merge(df, disp,  on='account_id', how="left")
+    df = pd.merge(df, client,  on='client_id', how="left")
+    df = pd.merge(df, transaction_train, how="left", on="account_id")
 
     # Days between loan and account creation
     df['days_between'] = df['granted_date'] - df['creation_date']
@@ -192,10 +192,10 @@ def clean2(output_name):
     transaction_test = clean_transactions(db, True)
     card_test = clean_card(db, True)    
 
-    df_test = pd.merge(loan_test, account, how="inner",on="account_id")
-    df_test = pd.merge(df_test, disp, how="inner",on="account_id")
-    df_test = pd.merge(df_test, client, how="inner",on="client_id")
-    df_test = pd.merge(df_test, transaction_test, how="inner",on="account_id")
+    df_test = pd.merge(loan_test, account, how="left",on="account_id")
+    df_test = pd.merge(df_test, disp, how="left",on="account_id")
+    df_test = pd.merge(df_test, client, how="left",on="client_id")
+    df_test = pd.merge(df_test, transaction_test, how="left",on="account_id")
 
     # Days between loan and account creation
     df_test['days_between'] = df_test['granted_date'] - df_test['creation_date']
