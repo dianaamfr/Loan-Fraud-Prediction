@@ -29,7 +29,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE account
 FIELDS TERMINATED BY ';' 
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (account_id, district_id, frequency, creation_date);
 
@@ -47,7 +47,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE card_train
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (card_id, disp_id, card_type, issued);
 
@@ -65,7 +65,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE card_test
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (card_id, disp_id, card_type, issued);
 
@@ -82,7 +82,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE client
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (client_id, birth_number, district_id);
 
@@ -130,7 +130,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE district
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (district_id, district_name, region, nr_inhabitants, nr_municip_inhabitants_499,
 nr_municip_inhabitants_500_1999, nr_municip_inhabitants_2000_9999, nr_municip_inhabitants_10000,
@@ -154,7 +154,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE loan_train
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (loan_id, account_id, granted_date, amount, duration, payments, loan_status);
 
@@ -175,20 +175,20 @@ LOAD DATA LOCAL INFILE
 INTO TABLE loan_test
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (loan_id, account_id, granted_date, amount, duration, payments, loan_status);
 
 -- Create and Load Transaction Train Table
 
 CREATE TABLE IF NOT EXISTS trans_train (
-    trans_id INT NOT NULL,
-    account_id INT NOT NULL,
-    trans_date INT NOT NULL,
-    trans_type VARCHAR(20) NOT NULL,
+    trans_id INT,
+    account_id INT,
+    trans_date INT,
+    trans_type VARCHAR(20),
     operation VARCHAR(20),
-    amount INT NOT NULL,
-    balance INT NOT NULL,
+    amount FLOAT,
+    balance FLOAT,
     k_symbol VARCHAR(20),
     bank VARCHAR(20),
     account INT
@@ -199,7 +199,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE trans_train
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (trans_id, account_id, trans_date, trans_type, operation, amount, balance, k_symbol, bank, account);
 
@@ -223,6 +223,6 @@ LOAD DATA LOCAL INFILE
 INTO TABLE trans_test
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (trans_id, account_id, trans_date, trans_type, operation, amount, balance, k_symbol, bank, account);

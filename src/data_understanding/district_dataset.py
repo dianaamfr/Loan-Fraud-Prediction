@@ -230,7 +230,8 @@ def same_district():
         'FROM loan_train JOIN account USING(account_id) ' \
         'JOIN district AS district_account ON district_account.district_id =  account.district_id '\
         'JOIN disposition USING(account_id) JOIN client USING(client_id) '\
-        'JOIN district AS district_client ON district_client.district_id = client.district_id')
+        'JOIN district AS district_client ON district_client.district_id = client.district_id '\
+        'WHERE disposition.disp_type = "OWNER"')
     
     sns.countplot(x='same_district', data=df,  hue="loan_status")
     plt.savefig(get_correlation_folder('district')/'same_district_status.jpg')

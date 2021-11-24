@@ -211,7 +211,7 @@ def loan_payments_status(df):
 def client_age_on_loan():
     df_loan = db.df_query('SELECT * FROM loan_train')
     df_account = db.df_query('SELECT * FROM account')
-    df_disp = db.df_query('SELECT * FROM disposition')
+    df_disp = db.df_query('SELECT * FROM disposition WHERE disp_type = "OWNER"')
     df_client = db.df_query('SELECT * FROM client')
 
     
@@ -230,19 +230,26 @@ def client_age_on_loan():
         #loan_date
         merged_df["granted_date"][index] = datetime(int("19"+str(merged_df["granted_date"][index])[0:2]),int(str(merged_df["granted_date"][index])[2:4]),int(str(merged_df["granted_date"][index])[4:6]))
 
-    merged_df['client_age_on_loan'] = (merged_df['granted_date'] - merged_df['birth_number']).dt.days / 365
+    merged_df['owner_age_on_loan'] = (merged_df['granted_date'] - merged_df['birth_number']).dt.days / 365
     
 
-    sns.kdeplot( merged_df['client_age_on_loan'], shade=True)
-    plt.savefig(get_correlation_folder('loan')/'client_age_on_loan.jpg')
+    sns.kdeplot( merged_df['owner_age_on_loan'], shade=True)
+    plt.savefig(get_correlation_folder('loan')/'owner_age_on_loan.jpg')
     plt.clf()
 
 
 def split_birth(birth_number):
     birth_str = str(birth_number)
+
+    # Male
     if int(birth_str[2:4]) < 50:
-        return 'M', birth_number
-    return 'F', int(birth_str[0:2] + str(int(birth_str[2:4]) - 50) + birth_str[4:5])
+        return 'M', int('19' + birth_str)
+
+    # Female
+    year = '19' + birth_str[0:2]
+    month = str(int(birth_str[2:4]) - 50).zfill(2)
+    day = birth_str[4:]
+    return 'F', int(year + month + day)
 
 def client_gender_status():
     df_loan = db.df_query('SELECT * FROM loan_train')
