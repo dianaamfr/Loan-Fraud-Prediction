@@ -36,6 +36,7 @@ def train(args):
 
     grid_search.fit(x_train, y_train.values.ravel())
 
+    # TODO - change this?
     y_pred = grid_search.predict_proba(x_test)
     prob_loan = y_pred[::, 1]
     auc = roc_auc_score(y_test, prob_loan)

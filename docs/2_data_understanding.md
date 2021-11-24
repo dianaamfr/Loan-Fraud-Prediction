@@ -94,7 +94,3 @@
 ![](../images/loan_account_dates.jpg)
 
 ***
-# LOGBOOK
-- Changed attribute "code" to "district_id" in District table
-
-# TODOs

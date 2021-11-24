@@ -7,6 +7,8 @@ def clean_loans(db):
     # Format loan date
     df['granted_date'] = df['granted_date'].apply(lambda date: int('19' + str(date)))
 
+    # TODO - maybe change here the status because of the AUC computation
+
     return df
 
 def clean_districts(db):
