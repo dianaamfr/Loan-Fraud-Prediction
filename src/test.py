@@ -1,14 +1,13 @@
 import joblib
-from database import database
 import sys
 import pandas as pd
 from pathlib import Path
 
-def test(classifier, data_file , output_name):
-    df = pd.read_csv('clean_data/' + data_file + '-test.csv', delimiter=",", low_memory=False)
+def test(classifier, submission_name):
+    df = pd.read_csv('clean_data/' + submission_name + '-test.csv', delimiter=",", low_memory=False)
 
     models_folder = Path("models/")
-    filename = models_folder/(classifier + '-' + output_name + '.sav')
+    filename = models_folder/(classifier + '-' + submission_name + '.sav')
     model = joblib.load(filename)
 
     x_test = df.drop(columns=['loan_id'])
@@ -26,7 +25,7 @@ def test(classifier, data_file , output_name):
     df_result['Id'] = loan_ids
     df_result['Predicted'] = prediction
 
-    df_result.to_csv('results/' + classifier + '-' + output_name + '.csv', sep=',', index=False)
+    df_result.to_csv('results/' + classifier + '-' +  submission_name + '.csv', sep=',', index=False)
 
 if __name__ == "__main__":
-    test(sys.argv[1], sys.argv[2], sys.argv[3])
+    test(sys.argv[1], sys.argv[2])

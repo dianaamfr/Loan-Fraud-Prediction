@@ -8,8 +8,8 @@ from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from pathlib import Path
 
-def train(classifier_name, data_file, output_name):
-    df = pd.read_csv('clean_data/' + data_file + '-train.csv', delimiter=",", low_memory=False)
+def train(classifier_name, submission_name):
+    df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
 
     x = df.drop(columns=['loan_status'])
     y = df['loan_status']
@@ -41,7 +41,7 @@ def train(classifier_name, data_file, output_name):
     print(f"AUC: {auc}")
 
     models_folder = Path("models/")
-    filename = models_folder/(classifier_name + '-' + output_name + '.sav')
+    filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
     joblib.dump(grid_search, filename)
 
 def get_classifier(classifier):
@@ -53,4 +53,4 @@ def get_parameter_grid(classifier):
         return {"C":np.logspace(-3,3,7), "penalty":["l2"]}
 
 if __name__ == "__main__":
-    train(sys.argv[1], sys.argv[2], sys.argv[3])
+    train(sys.argv[1], sys.argv[2])
