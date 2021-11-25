@@ -9,6 +9,10 @@ sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
 
+#######
+# Clean
+#######
+
 def clean_loans(db, test=False):
     table = 'loan_test' if test is True else 'loan_train'
     df = db.df_query('SELECT * FROM ' + table)
@@ -109,6 +113,10 @@ def clean_account(db):
     return df
 
 
+############
+# Transform
+############
+
 def transform_status(df):
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
     df["loan_status"].replace({1: 0}, inplace=True)
@@ -124,6 +132,11 @@ def transform_numeric_categorical(df):
     df = pd.get_dummies(df, prefix=cat_cols, columns = cat_cols, drop_first=True)
 
     return df
+
+
+#############
+# Submissions
+#############
 
 # Submission 1 - only loan
 def clean1(output_name):
@@ -144,7 +157,6 @@ def clean2(output_name):
     ############
     # TRAIN DATA
     ############
-    from functools import reduce
     loan_train = clean_loans(db)
     district = clean_districts(db)
     client = clean_clients(db)
