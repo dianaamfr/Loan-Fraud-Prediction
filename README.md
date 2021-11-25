@@ -31,10 +31,10 @@ Create the virtual environment:
 
 2. **Train**: Train the model with the clean data, using a specific classifier, compute the AUC and store the model in the models folder
 > `make train PARAMS='<classifier> <submission_name>'` 
-- outputs models/<classifier>-<submission_name>.sav
+- outputs models/&lt;classifier&gt;-&lt;submission_name&gt;.sav
 - *e.g.* `make train PARAMS='logistic_regression sub2'` will use as input the file sub2-train.csv from the clean_data folder and store in the models folder the model that results of applying the Logistic Regression Classifier to the data - `logistic_regression-sub2.sav`
 
 3. **Test**: Test a model with the test data and store the result in the results folder
 > `make test PARAMS='<classifier> <submission_name>'` 
-- outputs results/<classifier>-<submission_name>.csv
-- *e.g.* `make train PARAMS='logistic_regression sub2'` will apply the model models/logistic_regression-sub2.sav to the data from clean_data/sub2-test.csv and store in results/logistic_regression-sub2.csv
+- outputs results/&lt;classifier &gt;-&lt;submission_name &gt;.csv
+- *e.g.* `make test PARAMS='logistic_regression sub2'` will apply the model models/logistic_regression-sub2.sav to the data from clean_data/sub2-test.csv and store in results/logistic_regression-sub2.csv
