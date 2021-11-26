@@ -8,9 +8,7 @@ import sys
 from matplotlib.ticker import PercentFormatter
 
 sys.path.insert(1, '.')
-
 from database import database
-
 db = database.Database('bank_database')
 
 def card_train_du():
@@ -57,24 +55,24 @@ def card_type_status():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
+    df_good_series = df_good['card_type'].value_counts()
+    df_bad_series = df_bad['card_type'].value_counts()
+    
+    df_good_count = df_good_series.to_frame('total')
+    df_bad_count = df_bad_series.to_frame('total')
+    aux_bad = pd.DataFrame([[0], [0], [0]], columns = ['Total'], index=['classic', 'gold', 'junior'])
+    df_bad_count = df_bad_count.append(aux_bad)
+
     x_axis = np.arange(df['card_type'].nunique())
 
     fig, ax = plt.subplots(figsize=(16, 6)) # 7, 6
 
-    print("X_AXIS")
-    print(x_axis)
-    print("GOOOOOOD")
-    print(len(df_good))
-    print("BAAAAAAD")
-    print(len(df_bad))
-    print("GOOOOOOD VALUESSSSS")
-    print(df_good['card_type'].value_counts())
-    print("BAAAAAAD VALUESSSSS")
-    print(df_bad['card_type'].value_counts())
-    # print(df_bad.loc[df_bad['loan_status'] == -1])
+    # Não sei se querias que dividi-se pelo total de bom e mau ou se pelo total então deixei as duas :p
+    plt.bar(x_axis - 0.2, df_good_count['total']/len(df['loan_status']), 0.4, label = 'status 1', color='green', alpha=0.6)
+    plt.bar(x_axis + 0.2, df_bad_count['total']/len(df['loan_status']), 0.4, label = 'status -1', color='red', alpha=0.6)
 
-    plt.bar(x_axis - 0.2, df_good['card_type'].value_counts()/len(df_good), 0.4, label = 'status 1', color='green', alpha=0.6)
-    plt.bar(x_axis + 0.2, df_bad['card_type'].value_counts()/len(df_bad), 0.4, label = 'status -1', color='red', alpha=0.6)
+    # plt.bar(x_axis - 0.2, df_good_count['total']/len(df_good['loan_status']), 0.4, label = 'status 1', color='green', alpha=0.6)
+    # plt.bar(x_axis + 0.2, df_bad_count['total']/len(df_bad['loan_status']), 0.4, label = 'status -1', color='red', alpha=0.6)
 
     # apagar:
     # plt.bar(x_axis - 0.2, df_good['card_type'].value_counts(), 0.4, label = 'status 1', color='green', alpha=0.6)
@@ -93,6 +91,6 @@ def card_type_status():
 
 if __name__ == '__main__':
     create_plots_folders('card')
-    card_train_du()
-    card_test_du()
+    #card_train_du()
+    #card_test_du()
     card_type_status()
