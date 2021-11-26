@@ -3,7 +3,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import *
-from pathlib import Path
 import sys
 from matplotlib.ticker import PercentFormatter
 
@@ -65,18 +64,10 @@ def card_type_status():
 
     x_axis = np.arange(df['card_type'].nunique())
 
-    fig, ax = plt.subplots(figsize=(16, 6)) # 7, 6
+    fig, ax = plt.subplots(figsize=(16, 6))
 
-    # Não sei se querias que dividi-se pelo total de bom e mau ou se pelo total então deixei as duas :p
-    plt.bar(x_axis - 0.2, df_good_count['total']/len(df['loan_status']), 0.4, label = 'status 1', color='green', alpha=0.6)
-    plt.bar(x_axis + 0.2, df_bad_count['total']/len(df['loan_status']), 0.4, label = 'status -1', color='red', alpha=0.6)
-
-    # plt.bar(x_axis - 0.2, df_good_count['total']/len(df_good['loan_status']), 0.4, label = 'status 1', color='green', alpha=0.6)
-    # plt.bar(x_axis + 0.2, df_bad_count['total']/len(df_bad['loan_status']), 0.4, label = 'status -1', color='red', alpha=0.6)
-
-    # apagar:
-    # plt.bar(x_axis - 0.2, df_good['card_type'].value_counts(), 0.4, label = 'status 1', color='green', alpha=0.6)
-    # plt.bar(x_axis + 0.2, df_bad['card_type'].value_counts(), 0.4, label = 'status -1', color='red', alpha=0.6)
+    plt.bar(x_axis - 0.2, df_good_count['total']/len(df_good['loan_status']), 0.4, label = 'status 1', color='green', alpha=0.6)
+    plt.bar(x_axis + 0.2, df_bad_count['total']/len(df_bad['loan_status']), 0.4, label = 'status -1', color='red', alpha=0.6)
 
     plt.xticks(x_axis, df['card_type'].unique())
     plt.xlabel("type", labelpad=10)
@@ -91,6 +82,6 @@ def card_type_status():
 
 if __name__ == '__main__':
     create_plots_folders('card')
-    #card_train_du()
-    #card_test_du()
+    card_train_du()
+    card_test_du()
     card_type_status()
