@@ -1,6 +1,6 @@
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+import category_encoders as ce
+from sklearn.preprocessing import MinMaxScaler
 import datetime
 from datetime import date
 import sys
@@ -131,28 +131,26 @@ def transform_numeric_categorical(df):
     num_cols = ['amount', 'duration', 'payments', 'avg_amount','avg_balance','num_trans','days_between', 'age',
         'avg_crimes', 'avg_unemployment', 'nr_inhabitants', 'average_salary', 'nr_enterpreneurs_1000_inhabitants']
     cat_cols = ['frequency', 'gender', 'same_district'] # TODO: card type
-
-    #scaler = MinMaxScaler()
-    #df[num_cols] = scaler.fit_transform(df[num_cols])
-
-    # col_trans = ColumnTransformer([
-    #     ('num', MinMaxScaler(), num_cols),
-    #     ('cat', OneHotEncoder(drop='if_binary'), cat_cols)
-    # ])
-    # df_transformed = col_trans.fit_transform(df)
-
+    
+    # Normalize
     scaler = MinMaxScaler()
     scaler.fit(df[num_cols])
     df[num_cols] = pd.DataFrame(scaler.transform(df[num_cols]), index=df[num_cols].index, columns=df[num_cols].columns)
+
+    # Encode Categorical Variables
+    encoder= ce.OrdinalEncoder(cols=[cat_cols],return_df=True,mapping=[
+        {'col':'gender', 'mapping':{'M':0,'F':1}},
+        {'col':'same_district', 'mapping':{True:1,False:0}},
+        {'col':'frequency', 'mapping':{'monthly issuance':0,'weekly issuance':0.5, 'issuance after transaction':1}}])
+    df[cat_cols] = encoder.fit_transform(df[cat_cols])
+   
 
     # df.frequency = df.frequency.astype('category')
     # df.frequency = df.frequency.astype('category') # TODO: ver vídeo do YT da conversão das categorical
     # df.frequency = df.frequency.astype('category')
 
-    # TODO - verify if this is the best way 
-    df = pd.get_dummies(df, prefix=cat_cols, columns = cat_cols, drop_first=True)
-
-    print(df)
+    # TODO - try to change to OneHotEncoder because this add two columns instead of one
+    #df = pd.get_dummies(df, prefix=cat_cols, columns = cat_cols, drop_first=True)
 
     return df
 
@@ -203,7 +201,8 @@ def clean2(output_name):
 
     # Drop Irrelevant IDs
     # TODO - drop card_id
-    df.drop(columns=["account_id", "loan_id", "disp_id", "client_id", "account_district_id", "client_district_id"], inplace=True)
+    df.drop(columns=["account_id", "loan_id", "disp_id", "client_id", 
+    "district_id", "account_district_id", "client_district_id"], inplace=True)
 
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
     # transform_status(df)
@@ -234,11 +233,12 @@ def clean2(output_name):
     df_test.drop(columns=['creation_date', 'granted_date'], inplace=True)
 
     # Boolean value telling if the account was created on the owner district
-    df_test['same_district'] = df_test['account_district_id'] == df_test['client_district_id']
+    df_test['same_district'] = df_test['account_district_id'] == df_test['client_district_id'] 
 
     # Drop Irrelevant IDs
     # TODO - drop card_id
-    df_test.drop(columns=["account_id", "disp_id", "client_id", "account_district_id", "client_district_id", "loan_status"], inplace=True)
+    df_test.drop(columns=["account_id", "disp_id", "client_id", 
+    "district_id", "account_district_id", "client_district_id", "loan_status"], inplace=True)
 
     # Scale numeric variables and encode categorical variables
     df_test = transform_numeric_categorical(df_test)
