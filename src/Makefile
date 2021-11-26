@@ -1,17 +1,28 @@
-# clean PARAM='<submission_name>'
-# make clean PARAMS=sub2
+SHELL := /bin/bash
+.ONESHELL:
+.SHELLFLAGS := -eu -o pipefail -c
+
+PYTHON = python
+
+.PHONY: clean train test clean_models clean_cache
+
+RUN_ARGS := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+$(eval $(RUN_ARGS):;@:)
+
+# clean <submission_name>
+# make clean sub2
 clean:
-	python clean.py ${PARAMS}
+	@$(PYTHON) clean.py $(filter-out $@, $(RUN_ARGS))
 
-# train PARAM='<classifier> <submission_name>'
-# make train PARAMS='logistic_regression sub2'
+# train <classifier> <submission_name>
+# make train logistic_regression sub2
 train:
-	python train.py ${PARAMS}
+	@$(PYTHON) train.py $(filter-out $@, $(RUN_ARGS))
 
-# test PARAM='<classifier> <submission_name>'
-# make test PARAMS='logistic_regression sub2'
+# test <classifier> <submission_name>
+# make test logistic_regression sub2
 test:
-	python test.py ${PARAMS}
+	@$(PYTHON) test.py $(filter-out $@, $(RUN_ARGS))
 
 clean_models:
 	rm -rf models/*
