@@ -10,7 +10,8 @@ def test(classifier, submission_name):
     filename = models_folder/(classifier + '-' + submission_name + '.sav')
     model = joblib.load(filename)
 
-    x_test = df.drop(columns=['loan_id'])
+    x_test = df.set_index('loan_id')
+    
     print(x_test.head())
     prediction = model.predict_proba(x_test)[::,1]
 

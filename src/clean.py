@@ -1,17 +1,62 @@
 import pandas as pd
-import category_encoders as ce
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn import preprocessing
 import datetime
 from datetime import date
 import sys
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
 
 #pd.set_option('display.max_columns', None)
+
+#############
+# Correlation
+#############
+
+def get_df_correlation(df, size=(11, 9)):
+    '''Get the correlation between the dataframe features'''
+    # Compute the correlation matrix
+    corr = df.corr()
+
+    # Generate a mask for the upper triangle
+    mask = np.zeros_like(corr, dtype=np.bool)
+    mask[np.triu_indices_from(mask)] = True
+    
+    # Set up the matplotlib figure
+    plt.subplots(figsize=size)
+
+    # Generate a custom diverging colormap
+    cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+    # Draw the heatmap with the mask and correct aspect ratio
+    ax = sns.heatmap(corr, mask=mask, cmap=cmap, center=0,
+                     square=True, linewidths=.1, cbar_kws={"shrink": .5})
+    
+    y_lim = ax.get_ylim()
+    ax.set_ylim(np.ceil(y_lim[0]), np.floor(y_lim[1]))
+
+    plt.show()
+
+filter_features = []
+def select_features_FF(origin_df, corr_threshold = 0.1):
+   
+    # Only run in train
+    if bool(len(filter_features)) == False:
+        status_corr = origin_df.corr().tail(1).drop(['loan_status'], axis=1)
+        print(status_corr)
+
+        status_corr = status_corr.loc[:, (abs(status_corr) > corr_threshold).any()]
+
+        print('The chosen features whose correlation value is above the threshold:')
+        print(status_corr)
+
+        for col in status_corr:
+            filter_features.append(col)
 
 #######
 # Utils
@@ -149,6 +194,10 @@ def clean_districts(db):
     df = encode_category(df, 'region')
 
     # TODO - maybe define which features to keep with algorithm and not randomly
+    # TEMP
+    # df.drop(columns=['nr_municip_inhabitants_499', 'nr_municip_inhabitants_500_1999',
+    # 'nr_municip_inhabitants_2000_9999', 'nr_municip_inhabitants_10000', 'nr_inhabitants', 'region'], inplace=True)
+    
     """
     region VARCHAR(20) NOT NULL,
     nr_inhabitants INT NOT NULL,
@@ -276,7 +325,7 @@ def extract_features(df):
     # Boolean value telling if the account was created on the owner district
     df['same_district'] = df['account_district_id'] == df['client_district_id']
 
-    # Age when the loan was requestes
+    # Age when the loan was requested
     # TODO
     df.drop(columns=['birth_date'], inplace=True)
 
@@ -311,15 +360,20 @@ def clean(output_name):
     df_train.drop(columns=["account_id", "disp_id", "client_id", "district_id",
     "account_district_id", "client_district_id"], inplace=True)
 
-    df_train = df_train.set_index('loan_id')
-    print("TRAIN DATAFRAME")
-    print(df_train)
+    # Reorder columns
+    cols = list(df_train.columns)
+    a, b = cols.index('same_district'), cols.index('loan_status')
+    cols[b], cols[a] = cols[a], cols[b]
+    df_train = df_train[cols]
 
-    print()
-    print("NORMALIZED TRAIN DATAFRAME")
+    df_train = df_train.set_index('loan_id')
+
+    # select_features_FF(df_train)
+    # print(' > Obtained features from feature selection:')
+    # print(filter_features)
+
     df_train = normalize(df_train)
-    print(df_train)
-    
+
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
 
@@ -334,13 +388,12 @@ def clean(output_name):
 
     df_test = df_test.set_index('loan_id')
 
-    print("TEST DATAFRAME")
-    print(df_test)
-
-    print()
-    print("NORMALIZED TEST DATAFRAME")
+    # print("TEST DATAFRAME")
+    # print(df_test)
+    # print("NORMALIZED TEST DATAFRAME")
     df_test = normalize(df_test)
-    print(df_test)
+    print(df_test['avg_balance'])
+    # print(df_test)
 
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 
