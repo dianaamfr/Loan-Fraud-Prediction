@@ -30,7 +30,10 @@ def clean_districts(db):
     # Drop NaN values
     df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
     df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
-    df.dropna(inplace=True) # Remove NaN values
+
+    # TODO - check if the mean is the best value to use
+    df["unemployment_rate_95"].fillna((df["unemployment_rate_95"].mean()), inplace=True)
+    df["nr_commited_crimes_95"].fillna((df["nr_commited_crimes_95"].mean()), inplace=True)
 
     # Average Crimes
     df["avg_crimes"] = df[['nr_commited_crimes_95', 'nr_commited_crimes_96']].mean(axis=1)
@@ -44,6 +47,9 @@ def clean_districts(db):
 
     df = df[['district_id', 'avg_crimes', 'avg_unemployment','nr_inhabitants', 
     'average_salary', 'nr_enterpreneurs_1000_inhabitants']]
+
+    # TODO - check if we want to use the district of the account or the client
+    df.rename(columns={'district_id': 'account_district_id'}, inplace=True)
 
     return df
 
@@ -131,11 +137,12 @@ def transform_numeric_categorical(df):
     num_cols = ['amount', 'duration', 'payments', 'avg_amount','avg_balance','num_trans','days_between', 'age',
         'avg_crimes', 'avg_unemployment', 'nr_inhabitants', 'average_salary', 'nr_enterpreneurs_1000_inhabitants']
     cat_cols = ['frequency', 'gender', 'same_district'] # TODO: card type
-    
+
     # Normalize
     scaler = MinMaxScaler()
     scaler.fit(df[num_cols])
     df[num_cols] = pd.DataFrame(scaler.transform(df[num_cols]), index=df[num_cols].index, columns=df[num_cols].columns)
+
 
     # Encode Categorical Variables
     encoder= ce.OrdinalEncoder(cols=[cat_cols],return_df=True,mapping=[
@@ -144,7 +151,6 @@ def transform_numeric_categorical(df):
         {'col':'frequency', 'mapping':{'monthly issuance':0,'weekly issuance':0.5, 'issuance after transaction':1}}])
     df[cat_cols] = encoder.fit_transform(df[cat_cols])
    
-
     # df.frequency = df.frequency.astype('category')
     # df.frequency = df.frequency.astype('category') # TODO: ver vídeo do YT da conversão das categorical
     # df.frequency = df.frequency.astype('category')
@@ -187,8 +193,8 @@ def clean2(output_name):
     df = pd.merge(loan_train, account, on='account_id', how="left")
     df = pd.merge(df, disp,  on='account_id', how="left")
     df = pd.merge(df, client,  on='client_id', how="left")
-    # TODO - fazer 2 gráficos para mostrar pq que escolhemos os dados do district relativos à account e não ao client
-    df = pd.merge(df, district, left_on='account_district_id', right_on='district_id') # associate account's district
+    # TODO - fazer 2 gráficos para mostrar pq que escolhemos os dados do district relativos à account e não ao client; Experimentar escolher os do cliente
+    df = pd.merge(df, district, on='account_district_id') # associate account's district
     df = pd.merge(df, transaction_train, how="left", on="account_id")
     # TODO - merge CARD.
 
@@ -202,7 +208,7 @@ def clean2(output_name):
     # Drop Irrelevant IDs
     # TODO - drop card_id
     df.drop(columns=["account_id", "loan_id", "disp_id", "client_id", 
-    "district_id", "account_district_id", "client_district_id"], inplace=True)
+    "account_district_id", "client_district_id"], inplace=True)
 
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
     # transform_status(df)
@@ -224,9 +230,10 @@ def clean2(output_name):
     df_test = pd.merge(loan_test, account, how="left",on="account_id")
     df_test = pd.merge(df_test, disp, how="left",on="account_id")
     df_test = pd.merge(df_test, client, how="left",on="client_id")
-    df_test = pd.merge(df_test, district, left_on='account_district_id', right_on='district_id') # associate account's district
+    df_test = pd.merge(df_test, district, how="left", on='account_district_id') # associate account's district
     df_test = pd.merge(df_test, transaction_test, how="left",on="account_id")
     # TODO - merge CARD. 
+
 
     # Days between loan and account creation
     df_test['days_between'] = df_test['granted_date'] - df_test['creation_date']
@@ -238,7 +245,7 @@ def clean2(output_name):
     # Drop Irrelevant IDs
     # TODO - drop card_id
     df_test.drop(columns=["account_id", "disp_id", "client_id", 
-    "district_id", "account_district_id", "client_district_id", "loan_status"], inplace=True)
+    "account_district_id", "client_district_id", "loan_status"], inplace=True)
 
     # Scale numeric variables and encode categorical variables
     df_test = transform_numeric_categorical(df_test)
