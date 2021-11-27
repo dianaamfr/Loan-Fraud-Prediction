@@ -26,6 +26,11 @@ def encode_category(df, col):
     df[col] = encoder.transform(df[col])
     return df
 
+def normalize(df):
+    scaler = MinMaxScaler()
+    transformed = scaler.fit_transform(df)
+    df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
+    return df
 
 def split_birth(birth_number):
     year = 1900 + (birth_number // 10000)
@@ -51,26 +56,6 @@ def calculate_age(birth_date, loan_date):
     today = date.today()
     return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
-
-# TODO - delete and use encode category isntead for each individual column
-def transform_numeric_categorical(df):
-    num_cols = ['amount', 'duration', 'payments', 'avg_amount','avg_balance','num_trans','days_between', 'age',
-        'avg_crimes', 'avg_unemployment', 'nr_inhabitants', 'average_salary', 'nr_enterpreneurs_1000_inhabitants']
-    cat_cols = ['frequency', 'gender', 'same_district'] # TODO: card type
-
-    # Normalize
-    scaler = MinMaxScaler()
-    scaler.fit(df[num_cols])
-    df[num_cols] = pd.DataFrame(scaler.transform(df[num_cols]), index=df[num_cols].index, columns=df[num_cols].columns)
-
-    # Encode Categorical Variables
-    encoder= ce.OrdinalEncoder(cols=[cat_cols],return_df=True,mapping=[
-        {'col':'gender', 'mapping':{'M':0,'F':1}},
-        {'col':'same_district', 'mapping':{True:1,False:0}},
-        {'col':'frequency', 'mapping':{'monthly issuance':0,'weekly issuance':0.5, 'issuance after transaction':1}}])
-    df[cat_cols] = encoder.fit_transform(df[cat_cols])
-
-    return df
 
 def transform_status(df):
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
@@ -178,40 +163,84 @@ def clean_districts(db):
 
 def clean_transactions(db, test=False):
     table = 'trans_test' if test is True else 'trans_train'
+    df = db.df_query('SELECT * FROM ' + table)
 
-    df = db.df_query('SELECT account_id, AVG(amount) AS avg_amount, AVG(balance) AS avg_balance, COUNT(trans_id) AS num_trans '\
-        'FROM ' + table + ' GROUP BY account_id')
+    df = df.replace(r'^\s*$', np.NaN, regex=True)
 
-    # IN DEVELOPMENT
-    # df = db.df_query('SELECT * FROM ' + table)
+    # Drop columns with more than x% of NaN values
+    df.drop(columns=['bank', 'k_symbol'], inplace=True)
+    # TODO - extract features from k_symbol instead of dropping it
 
-    # df = df.replace(r'^\s*$', np.NaN, regex=True)
-    # # print(df.isna().mean())
-    # # Drop columns with more than x% of NaN values
-    # # TODO - check if k_symbol should be dropped
-    # df.drop(columns=['bank'], inplace=True)
-
-    # # Format date
-    # df = format_date(df, 'trans_date')
-
-    # # Rename withdrawal in cash - wrong label
-    # df.loc[df['type'] == 'withdrawal in cash','type'] = 'withdrawal'
-
-    # # TODO - check if the fact that a transaction is a credit or withdrawal should be considered (negative conversion)
-    # # df.loc[df["type"]=="withdrawal", "amount"] *=-1
+    # TODO - extract features from operation instead of dropping it
+    df["operation"].fillna("interest credited", inplace=True)
+    df.drop(columns=['operation'], inplace=True)
 
 
-    # # FEATURE EXTRACTION
-    # # Get average amount, balance and number of transactions
+    # TYPE & AMOUNT
+    # Rename withdrawal in cash - wrong label
+    df.loc[df['trans_type'] == 'withdrawal in cash','trans_type'] = 'withdrawal'
 
-    return df
+    # Make withdrawal amount negative
+    df.loc[df["trans_type"]=="withdrawal", "amount"] *= -1
+
+    # Format date
+    df = format_date(df, 'trans_date')
+
+
+    # FEATURE EXTRACTION
+    df_copy = df.copy()
+    # Average Amount by type
+    avg_amount_type = df_copy.groupby(['account_id', 'trans_type']).agg({'amount':['mean']}).reset_index()
+    avg_amount_type.columns = ['account_id', 'trans_type', 'avg_amount']
+
+    avg_amount_credit = avg_amount_type[avg_amount_type['trans_type'] == 'credit']
+    avg_amount_credit.columns = ['account_id', 'trans_type', 'avg_amount_credit']
+    avg_amount_credit = avg_amount_credit.drop(columns=["trans_type"])
+
+    avg_amount_withdrawal = avg_amount_type[avg_amount_type['trans_type'] == 'withdrawal']
+    avg_amount_withdrawal.columns = ['account_id', 'trans_type', 'avg_amount_withdrawal']
+    avg_amount_withdrawal = avg_amount_withdrawal.drop(columns=["trans_type"])
+
+    avg_amount_df = pd.merge(avg_amount_credit, avg_amount_withdrawal, on="account_id", how="outer")
+    avg_amount_df.fillna(0, inplace=True)
+
+
+    # Number of withdrawals and credits
+    type_counts = df_copy.groupby(['account_id', 'trans_type']).size().reset_index(name='counts')
+
+    credit_counts = type_counts[type_counts['trans_type'] == 'credit']
+    credit_counts.columns = ['account_id', 'trans_type', 'num_credits']
+    credit_counts = credit_counts.drop(columns=["trans_type"])
+
+    withdrawal_counts = type_counts[type_counts['trans_type'] == 'withdrawal']
+    withdrawal_counts.columns = ['account_id', 'trans_type', 'num_withdrawals']
+    withdrawal_counts = withdrawal_counts.drop(columns=["trans_type"])
+
+    trans_type_count_df = pd.merge(credit_counts, withdrawal_counts, on="account_id", how="outer")
+    trans_type_count_df.fillna(0, inplace=True)
+
+    # TODO - Ratio of credits and withdrawals instead of count
+
+    new_df = pd.merge(avg_amount_df, trans_type_count_df, on="account_id", how="outer")
+
+
+    # Average Balance & Num Transactions
+    balance_count_df = db.df_query('SELECT account_id, AVG(balance) AS avg_balance, COUNT(trans_id) AS num_trans '\
+            'FROM ' + table + ' GROUP BY account_id')
+
+    new_df = pd.merge(new_df, balance_count_df, on="account_id", how="outer")
+
+    return new_df
 
 def clean_cards(db, test=False):
     table = 'card_test' if test is True else 'card_train'
     df = db.df_query("SELECT * FROM " + table)
 
-    # Format issuance date
-    df['issued'] = df['issued'].apply(lambda date: int('19' + str(date)))
+    # Drop issuance date
+    df.drop(columns=['issued'])
+    
+    # Encode card_type
+    df = encode_category(df, 'card_type')
 
     return df
 
@@ -232,8 +261,8 @@ def merge_datasets(db, test=False):
     df = pd.merge(loan, account, on='account_id', how="left")
     df = pd.merge(df, disp,  on='account_id', how="left")
     df = pd.merge(df, client,  on='client_id', how="left")
-    # TODO - fazer 2 gráficos para mostrar pq que escolhemos os dados do district relativos à account e não ao client ou vice versa; Experimentar escolher os do cliente;
-    df = pd.merge(df, district, left_on='account_district_id', right_on='district_id') # associate account's district
+    # TODO - fazer 2 gráficos para escolher os dados do district relativos à account ou ao cliente
+    df = pd.merge(df, district, left_on='client_district_id', right_on='district_id')
     df = pd.merge(df, transaction, how="left", on="account_id")
     # TODO - merge CARD.
 
@@ -241,11 +270,15 @@ def merge_datasets(db, test=False):
 
 def extract_features(df):
     # Days between loan and account creation
-    df['days_between'] = df['granted_date'] - df['creation_date']
+    df['days_between'] = (df['granted_date'] - df['creation_date']).dt.days
     df.drop(columns=['creation_date', 'granted_date'], inplace=True)
 
     # Boolean value telling if the account was created on the owner district
     df['same_district'] = df['account_district_id'] == df['client_district_id']
+
+    # Age when the loan was requestes
+    # TODO
+    df.drop(columns=['birth_date'], inplace=True)
 
     return df
 
@@ -275,13 +308,19 @@ def clean(output_name):
     df_train = merge_datasets(db)
     df_train = extract_features(df_train)
 
-    df_train.drop(columns=["account_id", "loan_id", "disp_id", "client_id", 
+    df_train.drop(columns=["account_id", "disp_id", "client_id", "district_id",
     "account_district_id", "client_district_id"], inplace=True)
-    
-    # transform_status(df)
-    df = transform_numeric_categorical(df_train)
 
-    df.to_csv('clean_data/' + output_name + '-train.csv', index=False)
+    df_train = df_train.set_index('loan_id')
+    print("TRAIN DATAFRAME")
+    print(df_train)
+
+    print()
+    print("NORMALIZED TRAIN DATAFRAME")
+    df_train = normalize(df_train)
+    print(df_train)
+    
+    df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
 
     ############
@@ -293,11 +332,18 @@ def clean(output_name):
     df_test.drop(columns=["account_id", "loan_status", "disp_id", "client_id", 
     "district_id", "account_district_id", "client_district_id"], inplace=True)
 
-    df_test = transform_numeric_categorical(df_test)
+    df_test = df_test.set_index('loan_id')
 
-    df_test.to_csv('clean_data/' + output_name + '-test.csv', index=False)
+    print("TEST DATAFRAME")
+    print(df_test)
+
+    print()
+    print("NORMALIZED TEST DATAFRAME")
+    df_test = normalize(df_test)
+    print(df_test)
+
+    df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 
 
 if __name__ == "__main__":
-    #clean(sys.argv[1])
-    clean_transactions(db)
+    clean(sys.argv[1])
