@@ -1,20 +1,26 @@
 import sys
 import joblib
-from matplotlib.pyplot import cla, grid
-import numpy as np
 import pandas as pd
 from sklearn import metrics
 from seaborn.axisgrid import Grid
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import mutual_info_classif
+from sklearn.feature_selection import f_regression
+from sklearn.feature_selection import mutual_info_regression
+import pickle
+
 from pathlib import Path
 
 DEBUG = False
-RS = 10
+RS = 0
 
 def grid_search(classifier_name, submission_name):
 
@@ -30,7 +36,7 @@ def grid_search(classifier_name, submission_name):
         estimator=classifier,
         param_grid = params,
         scoring=metrics.make_scorer(auc_scorer, greater_is_better=True),
-        cv=StratifiedKFold(5, random_state=RS, shuffle=True),
+        cv=KFold(5, random_state=RS, shuffle=True),
         n_jobs = -1)
 
     grid_results = grid_search_var.fit(X, y)
@@ -39,13 +45,38 @@ def grid_search(classifier_name, submission_name):
     print('Best Score: ', grid_results.best_score_)
     
 
+def select_features(X, y):
+    models_folder = Path("models/")
+
+    bestfeatures = SelectKBest(score_func=f_classif, k=10) # f_classif, f_regression
+    fit = bestfeatures.fit(X,y)
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(X.columns)
+    featureScores = pd.concat([dfcolumns,dfscores],axis=1)
+    featureScores.columns = ['Specs','Score']  #naming the dataframe columns
+    print(featureScores.nlargest(10, 'Score'))  #print 10 best features
+
+    print(featureScores.nlargest(10,'Score')['Specs'].values.tolist())
+
+    best_attributes = featureScores.nlargest(10,'Score')['Specs'].values.tolist()
+
+    pickle.dump(best_attributes, open(models_folder/'attributes.pkl', "wb"))
+
+    X = X[best_attributes]
+
+    return X, y
+
 def train(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=10)
+    print(X.columns)
+
+    X, y = select_features(X, y)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
 
     classifier = get_classifier_best(classifier_name)
     classifier.fit(X_train, y_train)
@@ -66,7 +97,7 @@ def train(classifier_name, submission_name):
 
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
-    joblib.dump(grid_search, filename)
+    joblib.dump(classifier, filename)
 
 
 def get_classifier(classifier):

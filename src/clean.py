@@ -253,6 +253,11 @@ def clean_transactions(db, test=False):
     avg_amount_df = pd.merge(avg_amount_credit, avg_amount_withdrawal, on="account_id", how="outer")
     avg_amount_df.fillna(0, inplace=True)
 
+    avg_amount_total = df_copy.groupby(['account_id']).agg({'amount':['mean']}).reset_index()
+    avg_amount_total.columns = ['account_id', 'avg_amount_total']
+    new_df = pd.merge(avg_amount_df, avg_amount_total, on="account_id", how="outer")
+    new_df.fillna(0, inplace=True)
+
 
     # Number of withdrawals and credits
     type_counts = df_copy.groupby(['account_id', 'trans_type']).size().reset_index(name='counts')
@@ -270,7 +275,7 @@ def clean_transactions(db, test=False):
 
     # TODO - Ratio of credits and withdrawals instead of count
 
-    new_df = pd.merge(avg_amount_df, trans_type_count_df, on="account_id", how="outer")
+    new_df = pd.merge(new_df, trans_type_count_df, on="account_id", how="outer")
 
 
     # Average Balance & Num Transactions
@@ -368,6 +373,7 @@ def clean(output_name):
 
     df_train = df_train.set_index('loan_id')
 
+    # get_df_correlation(df_train)
     # select_features_FF(df_train)
     # print(' > Obtained features from feature selection:')
     # print(filter_features)
@@ -392,7 +398,6 @@ def clean(output_name):
     # print(df_test)
     # print("NORMALIZED TEST DATAFRAME")
     df_test = normalize(df_test)
-    print(df_test['avg_balance'])
     # print(df_test)
 
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
