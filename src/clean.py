@@ -163,13 +163,28 @@ def clean_districts(db):
     # REPLACE NANs
     df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
     df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
-    
-    # TODO - check if the median is the best value to use
+
     median_nr_crimes_95 = df["nr_commited_crimes_95"].median(skipna=True)
     median_unemployment_rate_95 = df["unemployment_rate_95"].median(skipna=True)
 
-    df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
-    df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
+    mean_nr_crimes_95 = df["nr_commited_crimes_95"].mean(skipna=True)
+    mean_unemployment_rate_95 = df["unemployment_rate_95"].mean(skipna=True)
+
+    # Drop the rows with the missing values
+    # df = df[df['nr_commited_crimes_95'].notna()]
+    # df = df[df['unemployment_rate_95'].notna()]
+
+    # Fill the missing values using forward-fill propagation
+    df["nr_commited_crimes_95"] = df["nr_commited_crimes_95"].fillna(method='ffill')
+    df["unemployment_rate_95"] = df["unemployment_rate_95"].fillna(method='ffill')
+
+    # Fill the missing values with the median
+    # df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
+    # df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
+
+    # Fill the missing values with the mean
+    # df["nr_commited_crimes_95"].fillna(mean_nr_crimes_95, inplace=True)
+    # df["unemployment_rate_95"].fillna(mean_unemployment_rate_95, inplace=True)
 
     # FEATURE EXTRACTION
 
