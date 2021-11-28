@@ -10,7 +10,6 @@ sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
 
-# TODO - change to use DB
 def disp_du():
     df = db.df_query('SELECT * FROM disposition')
     stats(df)
