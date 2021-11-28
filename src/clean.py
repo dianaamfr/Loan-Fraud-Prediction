@@ -95,11 +95,16 @@ def split_birth(birth_number):
 
     return gender, birth_date
 
-# TODO - use this to get age of client on loan
 def calculate_age(birth_date, loan_date):
-    birth_date = datetime.datetime.strptime(birth_date, "%Y%m%d")
-    today = date.today()
-    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    frame = { 'birth': birth_date, 'granted': loan_date }
+    dates = pd.DataFrame(frame)
+
+    dates['birth'] = pd.to_datetime(dates['birth'], format='%Y-%m-%d')
+    dates['granted'] = pd.to_datetime(dates['granted'], format='%Y-%m-%d')
+
+    dates['difference'] = (dates['granted'] - dates['birth']).dt.days
+
+    return dates['difference']
 
 
 def transform_status(df):
@@ -323,16 +328,16 @@ def merge_datasets(db, test=False):
     return df
 
 def extract_features(df):
+    # Age when the loan was requested
+    df['age_when_loan'] = calculate_age(df['birth_date'], df['granted_date'])
+    df.drop(columns=['birth_date'], inplace=True)
+
     # Days between loan and account creation
     df['days_between'] = (df['granted_date'] - df['creation_date']).dt.days
     df.drop(columns=['creation_date', 'granted_date'], inplace=True)
 
     # Boolean value telling if the account was created on the owner district
     df['same_district'] = df['account_district_id'] == df['client_district_id']
-
-    # Age when the loan was requested
-    # TODO
-    df.drop(columns=['birth_date'], inplace=True)
 
     return df
 
