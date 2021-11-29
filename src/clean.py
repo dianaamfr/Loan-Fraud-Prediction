@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 from sklearn import preprocessing
 import datetime
 from datetime import date
@@ -55,11 +54,6 @@ def encode_category(df, col):
     df[col] = encoder.transform(df[col])
     return df
 
-def normalize(df):
-    scaler = MinMaxScaler()
-    transformed = scaler.fit_transform(df)
-    df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
-    return df
 
 def split_birth(birth_number):
     year = 1900 + (birth_number // 10000)
@@ -299,7 +293,6 @@ def extract_features(df):
 
     # Age when the loan was requested
     df['age_when_loan'] = calculate_age(df['birth_date'], df['granted_date'])
-    print(df[['birth_date', 'granted_date', 'age_when_loan']])
     df.drop(columns=['birth_date'], inplace=True)
 
     # Days between loan and account creation
@@ -348,8 +341,6 @@ def clean(output_name):
 
     df_train = df_train.set_index('loan_id')
 
-    df_train = normalize(df_train)
-
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
 
@@ -364,8 +355,6 @@ def clean(output_name):
 
     df_test = df_test.set_index('loan_id')
 
-    df_test = normalize(df_test)
-    
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 
 

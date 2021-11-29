@@ -7,25 +7,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
-from sklearn.feature_selection import f_classif
-from sklearn.feature_selection import mutual_info_classif
-from sklearn.feature_selection import f_regression
-from sklearn.feature_selection import mutual_info_regression
+from sklearn.feature_selection import chi2, f_classif, mutual_info_classif, f_regression, mutual_info_regression
+from sklearn.preprocessing import MinMaxScaler
 import pickle
-
 from pathlib import Path
 
 DEBUG = False
-RS = 0
+RS = 42
 
 def grid_search(classifier_name, submission_name):
 
     # Split dataset into training set and test set
     df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
+    df = normalize_if_not_tree_based(df, classifier_name)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
@@ -35,7 +31,7 @@ def grid_search(classifier_name, submission_name):
     grid_search_var = GridSearchCV(
         estimator=classifier,
         param_grid = params,
-        scoring=metrics.make_scorer(auc_scorer, greater_is_better=True),
+        scoring='roc_auc',
         cv=KFold(5, random_state=RS, shuffle=True),
         n_jobs = -1)
 
@@ -45,7 +41,7 @@ def grid_search(classifier_name, submission_name):
     print('Best Score: ', grid_results.best_score_)
     
 
-def select_features(X, y):
+def filter_feature_selection(X, y):
     models_folder = Path("models/")
 
     bestfeatures = SelectKBest(score_func=f_classif, k=10) # f_classif, f_regression
@@ -68,13 +64,14 @@ def select_features(X, y):
 
 def train(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
+    df = normalize_if_not_tree_based(df, classifier_name)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
     print(X.columns)
 
-    X, y = select_features(X, y)
+    X, y = filter_feature_selection(X, y)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
 
@@ -145,10 +142,20 @@ def get_classifier_best(classifier):
         return GradientBoostingClassifier(criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 2, min_samples_split= 8, n_estimators= 8)
 
 
-def auc_scorer(y_true, y_pred):
-    '''Scorer of Area Under Curve value'''
-    fpr, tpr, _ = metrics.roc_curve(y_true, y_pred)
-    return metrics.auc(fpr, tpr)
+###########
+# Normalize
+###########
+
+def normalize_if_not_tree_based(df, classifier_name):
+    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest'):
+        return normalize(df)
+    return df
+
+def normalize(df):
+    scaler = MinMaxScaler()
+    transformed = scaler.fit_transform(df)
+    df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
+    return df
 
 
 if __name__ == "__main__":
