@@ -262,7 +262,6 @@ def clean_transactions(db, test=False):
     new_df = pd.merge(new_df, balance_count_df, on="account_id", how="outer")
     new_df = pd.merge(new_df, last_balance_df, on="account_id", how="outer")
 
-    print(new_df)
     return new_df
 
 

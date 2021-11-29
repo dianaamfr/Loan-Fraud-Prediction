@@ -241,13 +241,22 @@ def get_grid_params(classifier):
 
 # TODO - update this according to grid search
 def get_classifier_best(classifier):
-    if classifier == 'logistic_regression':
+    if classifier == 'decision_tree':
+        # return DecisionTreeClassifier(criterion='entropy', splitter='random')
+        return DecisionTreeClassifier()
+    elif classifier == 'logistic_regression':
         return LogisticRegression(C = 0.01, class_weight= 'balanced', penalty= 'none', solver= 'saga')
     elif classifier == 'random_forest':
         return RandomForestClassifier(class_weight= 'balanced_subsample', criterion= 'gini', max_depth= 30)
     elif classifier == 'gradient_boosting':
-        return GradientBoostingClassifier(criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 2, min_samples_split= 8, n_estimators= 8)
-
+        return GradientBoostingClassifier(random_state=RS, criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12)
+    elif classifier == 'svm':
+        return SVC(random_state=RS, C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= 3, probability=True)
+    elif classifier == 'knn':
+        return KNeighborsClassifier(n_neighbors=5, weights='distance', leaf_size=20, p=1)
+    elif classifier == 'neural_network':
+        return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs')
+        # return MLPClassifier()
 
 ###########
 # Normalize
