@@ -79,11 +79,15 @@ def split_birth(birth_number):
 
     return gender, birth_date
 
-# TODO - use this to get age of client on loan
 def calculate_age(birth_date, loan_date):
-    birth_date = datetime.datetime.strptime(birth_date, "%Y%m%d")
-    today = date.today()
-    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    frame = { 'birth': birth_date, 'granted': loan_date }
+    dates = pd.DataFrame(frame)
+
+    dates['birth'] = pd.to_datetime(dates['birth'], format='%Y-%m-%d')
+    dates['granted'] = pd.to_datetime(dates['granted'], format='%Y-%m-%d')
+    dates['difference'] = (dates['granted'] - dates['birth']).dt.days // 365
+
+    return dates['difference'] 
 
 
 def transform_status(df):
@@ -102,12 +106,12 @@ def clean_loans(db, test=False):
 
     # Format loan date
     df = format_date(df, 'granted_date')
-
+   
     return df
 
 def clean_accounts(db):
     df = db.df_query("SELECT * FROM account")
-
+  
     # Format creation date
     df = format_date(df, 'creation_date')
     
@@ -133,22 +137,23 @@ def clean_clients(db):
     df.drop(columns=['birth_number'], inplace=True)
 
     df.rename(columns={'district_id': 'client_district_id'}, inplace=True)
-
     return df
 
 def clean_districts(db):
     df = db.df_query('SELECT * FROM district')
-    
+   
     # REPLACE NANs
     df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
     df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
     
-    # TODO - check if the median is the best value to use
+    # Replace nr of crimes and unemployment missing values by median
+    # TODO: maybe try to extract the equation of the relations between 96 and 95 and use it instead
     median_nr_crimes_95 = df["nr_commited_crimes_95"].median(skipna=True)
     median_unemployment_rate_95 = df["unemployment_rate_95"].median(skipna=True)
 
     df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
     df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
+
 
     # FEATURE EXTRACTION
 
@@ -291,16 +296,18 @@ def merge_datasets(db, test=False):
     return df
 
 def extract_features(df):
+
+    # Age when the loan was requested
+    df['age_when_loan'] = calculate_age(df['birth_date'], df['granted_date'])
+    print(df[['birth_date', 'granted_date', 'age_when_loan']])
+    df.drop(columns=['birth_date'], inplace=True)
+
     # Days between loan and account creation
     df['days_between'] = (df['granted_date'] - df['creation_date']).dt.days
     df.drop(columns=['creation_date', 'granted_date'], inplace=True)
 
     # Boolean value telling if the account was created on the owner district
     df['same_district'] = df['account_district_id'] == df['client_district_id']
-
-    # Age when the loan was requested
-    # TODO
-    df.drop(columns=['birth_date'], inplace=True)
 
     return df
 
