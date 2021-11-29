@@ -8,6 +8,7 @@ from seaborn.axisgrid import Grid
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -80,6 +81,7 @@ def select_features(X, y):
 
     return X, y
 
+
 def select_features_RFECV(X,y,classifier_name):
     models_folder = Path("models/")
     classifier=get_classifier(classifier_name)
@@ -141,7 +143,9 @@ def train(classifier_name, submission_name):
 
 
 def get_classifier(classifier):
-    if classifier == 'logistic_regression':
+    if classifier == 'decision_tree':
+        return DecisionTreeClassifier(random_state=RS)
+    elif classifier == 'logistic_regression':
         return LogisticRegression(random_state=RS, max_iter=300)
     elif classifier == 'random_forest':
         return RandomForestClassifier(random_state=RS)
@@ -152,7 +156,19 @@ def get_classifier(classifier):
 
 
 def get_grid_params(classifier):
-    if classifier == 'logistic_regression':
+    if classifier == 'decision_tree':
+        return {'criterion': ['gini', 'entropy'],
+                'splitter': ['best', 'random'],
+                'max_depth': [3,5,7],
+                'min_samples_split': [1,2,3],
+                'min_samples_leaf': [1,2,3],
+                'min_weight_fraction_leaf': [0.0],
+                'max_features': [None, 'auto', 'sqrt', 'log2', 12],
+                'max_leaf_nodes': [None],
+                'min_impurity_decrease': [0.0],
+                'class_weight': [None],
+                'ccp_alpha': [0.0]}
+    elif classifier == 'logistic_regression':
         return {'penalty': ['l2', 'none'],
                 'C': [0.01, 0.05, 0.1, 0.2, 0.5, 1.0],
                 'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
@@ -193,7 +209,10 @@ def get_grid_params(classifier):
 
 
 def get_classifier_best(classifier):
-    if classifier == 'logistic_regression':
+    if classifier == 'decision_tree':
+        # return DecisionTreeClassifier(criterion='entropy', splitter='random')
+        return DecisionTreeClassifier()
+    elif classifier == 'logistic_regression':
         # SelectKBest:
         return LogisticRegression(random_state=RS, C = 0.01, class_weight= 'balanced', penalty= 'none', solver= 'saga')
         # RFECV:
