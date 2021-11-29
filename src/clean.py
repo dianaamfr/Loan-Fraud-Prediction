@@ -202,9 +202,9 @@ def clean_transactions(db, test=False):
     # Format date
     df = format_date(df, 'trans_date')
 
-
-    # FEATURE EXTRACTION
     df_copy = df.copy()
+    # FEATURE EXTRACTION
+
     # Average Amount by type
     avg_amount_type = df_copy.groupby(['account_id', 'trans_type']).agg({'amount':['mean']}).reset_index()
     avg_amount_type.columns = ['account_id', 'trans_type', 'avg_amount']
@@ -239,19 +239,32 @@ def clean_transactions(db, test=False):
 
     trans_type_count_df = pd.merge(credit_counts, withdrawal_counts, on="account_id", how="outer")
     trans_type_count_df.fillna(0, inplace=True)
+    trans_type_count_df['credit_ratio'] = trans_type_count_df['num_credits'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
+    trans_type_count_df['withdrawal_ratio'] = trans_type_count_df['num_withdrawals'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
 
-    # TODO - Ratio of credits and withdrawals instead of count
-
+    trans_type_count_df.drop(columns=['num_credits', 'num_withdrawals'], inplace=True)
     new_df = pd.merge(new_df, trans_type_count_df, on="account_id", how="outer")
 
-
-    # Average Balance & Num Transactions
-    balance_count_df = db.df_query('SELECT account_id, AVG(balance) AS avg_balance, COUNT(trans_id) AS num_trans '\
+    # Average, Min, Max Balance & Num Transactions
+    balance_count_df = db.df_query('SELECT account_id, AVG(balance) AS avg_balance, COUNT(trans_id) AS num_trans, '\
+            ' MAX(balance) AS max_balance, MIN(balance) AS min_balance '\
             'FROM ' + table + ' GROUP BY account_id')
+    balance_count_df['negative_balance'] = balance_count_df['min_balance'] < 0
+    balance_count_df = encode_category(balance_count_df, 'negative_balance')
+
+    # Last Transaction
+    last_balance_df = db.df_query('SELECT account_id, AVG(balance) AS last_balance FROM '\
+            + table + ' JOIN (SELECT account_id, max(trans_date) AS last_date FROM ' + table + ' GROUP BY account_id) AS last_date '\
+            'USING(account_id) WHERE last_date = trans_date GROUP BY account_id')
+    last_balance_df['last_balance_negative'] = last_balance_df['last_balance'] < 0
+    last_balance_df = encode_category(last_balance_df, 'last_balance_negative')
 
     new_df = pd.merge(new_df, balance_count_df, on="account_id", how="outer")
+    new_df = pd.merge(new_df, last_balance_df, on="account_id", how="outer")
 
+    print(new_df)
     return new_df
+
 
 def clean_cards(db, test=False):
     table = 'card_test' if test is True else 'card_train'
