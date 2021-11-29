@@ -6,7 +6,7 @@ PYTHON = python
 
 .PHONY: clean train test clean_models clean_cache
 
-RUN_ARGS := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(RUN_ARGS):;@:)
 
 # clean <submission_name>
