@@ -13,6 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.feature_selection import RFECV
 from sklearn.feature_selection import SelectKBest
@@ -153,6 +154,8 @@ def get_classifier(classifier):
         return GradientBoostingClassifier(random_state=RS)
     elif classifier == 'svm':
         return SVC(random_state=RS)
+    elif classifier == 'knn':
+        return KNeighborsClassifier(random_state=RS)
 
 
 def get_grid_params(classifier):
@@ -204,6 +207,16 @@ def get_grid_params(classifier):
           'decision_function_shape':['ovo','ovr'],
           'class_weight':[None, 'balanced', dict]}
 
+    elif classifier == 'knn':
+        return {'n_neighbors': [3, 5, 7, 9],
+          'weights': ['uniform', 'distance'],
+          'algorithm':['auto', 'ball_tree', 'kd_tree', 'brute'],
+          'leaf_size':[20, 30, 40],
+          'p':[1, 2, 3],
+          'metric':['minkowski'],
+          'metric_params':[None],
+          'n_jobs':[None, 5]}
+
     #elif classifier == 'SelectKBest':
     #    return {'score_func': [ mutual_info_classif, chi2, f_regression, mutual_info_regression, SelectPercentile, SelectFpr, SelectFdr, SelectFwe, GenericUnivariateSelect, f_classif]}
 
@@ -225,6 +238,9 @@ def get_classifier_best(classifier):
         return GradientBoostingClassifier(random_state=RS, criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12)
     elif classifier == 'svm':
         return SVC(random_state=RS, C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= 3, probability=True)
+    elif classifier == 'knn':
+        return KNeighborsClassifier(n_neighbors=5, weights='distance', leaf_size=20, p=1)
+        # return KNeighborsClassifier(n_neighbors=5)
 
 def auc_scorer(y_true, y_pred):
     '''Scorer of Area Under Curve value'''
