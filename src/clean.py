@@ -42,22 +42,6 @@ def get_df_correlation(df, size=(11, 9)):
 
     plt.show()
 
-filter_features = []
-def select_features_FF(origin_df, corr_threshold = 0.1):
-   
-    # Only run in train
-    if bool(len(filter_features)) == False:
-        status_corr = origin_df.corr().tail(1).drop(['loan_status'], axis=1)
-        print(status_corr)
-
-        status_corr = status_corr.loc[:, (abs(status_corr) > corr_threshold).any()]
-
-        print('The chosen features whose correlation value is above the threshold:')
-        print(status_corr)
-
-        for col in status_corr:
-            filter_features.append(col)
-
 #######
 # Utils
 #######
@@ -186,28 +170,12 @@ def clean_districts(db):
     # Unemployment Growth
     df['unemployment_growth'] = df['unemployment_rate_96'] - df['unemployment_rate_95']
 
-    
     # Drop
     df.drop(columns=['nr_commited_crimes_95','nr_commited_crimes_96','unemployment_rate_95','unemployment_rate_96', 'nr_enterpreneurs_1000_inhabitants', 'district_name'], inplace=True)
 
     # Encode Region
     df = encode_category(df, 'region')
-
-    # TODO - maybe define which features to keep with algorithm and not randomly
-    # TEMP
-    # df.drop(columns=['nr_municip_inhabitants_499', 'nr_municip_inhabitants_500_1999',
-    # 'nr_municip_inhabitants_2000_9999', 'nr_municip_inhabitants_10000', 'nr_inhabitants', 'region'], inplace=True)
     
-    """
-    region VARCHAR(20) NOT NULL,
-    nr_inhabitants INT NOT NULL,
-    nr_municip_inhabitants_499 INT NOT NULL,
-    nr_municip_inhabitants_500_1999 INT NOT NULL,
-    nr_municip_inhabitants_2000_9999 INT NOT NULL,
-    nr_municip_inhabitants_10000 INT NOT NULL,
-    nr_cities INT NOT NULL,
-    """
-
     return df
 
 def clean_transactions(db, test=False):
@@ -373,11 +341,6 @@ def clean(output_name):
 
     df_train = df_train.set_index('loan_id')
 
-    # get_df_correlation(df_train)
-    # select_features_FF(df_train)
-    # print(' > Obtained features from feature selection:')
-    # print(filter_features)
-
     df_train = normalize(df_train)
 
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
@@ -394,12 +357,8 @@ def clean(output_name):
 
     df_test = df_test.set_index('loan_id')
 
-    # print("TEST DATAFRAME")
-    # print(df_test)
-    # print("NORMALIZED TEST DATAFRAME")
     df_test = normalize(df_test)
-    # print(df_test)
-
+    
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 
 
