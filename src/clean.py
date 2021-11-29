@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 from sklearn import preprocessing
 import datetime
 from datetime import date
@@ -12,7 +11,7 @@ sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
 
-#pd.set_option('display.max_columns', None)
+# pd.set_option('display.max_columns', None)
 
 #############
 # Correlation
@@ -42,22 +41,6 @@ def get_df_correlation(df, size=(11, 9)):
 
     plt.show()
 
-filter_features = []
-def select_features_FF(origin_df, corr_threshold = 0.1):
-   
-    # Only run in train
-    if bool(len(filter_features)) == False:
-        status_corr = origin_df.corr().tail(1).drop(['loan_status'], axis=1)
-        print(status_corr)
-
-        status_corr = status_corr.loc[:, (abs(status_corr) > corr_threshold).any()]
-
-        print('The chosen features whose correlation value is above the threshold:')
-        print(status_corr)
-
-        for col in status_corr:
-            filter_features.append(col)
-
 #######
 # Utils
 #######
@@ -69,12 +52,6 @@ def encode_category(df, col):
     encoder = preprocessing.LabelEncoder()
     encoder.fit(df[col].unique())
     df[col] = encoder.transform(df[col])
-    return df
-
-def normalize(df):
-    scaler = MinMaxScaler()
-    transformed = scaler.fit_transform(df)
-    df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
     return df
 
 def split_birth(birth_number):
@@ -396,13 +373,6 @@ def clean(output_name):
 
     df_train = df_train.set_index('loan_id')
 
-    # get_df_correlation(df_train)
-    # select_features_FF(df_train)
-    # print(' > Obtained features from feature selection:')
-    # print(filter_features)
-
-    #df_train = normalize(df_train)
-
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
 
@@ -416,12 +386,6 @@ def clean(output_name):
     "district_id", "account_district_id", "client_district_id"], inplace=True)
 
     df_test = df_test.set_index('loan_id')
-
-    # print("TEST DATAFRAME")
-    # print(df_test)
-    # print("NORMALIZED TEST DATAFRAME")
-    #df_test = normalize(df_test)
-    # print(df_test)
 
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 

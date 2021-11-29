@@ -5,62 +5,31 @@ import joblib
 import pandas as pd
 from sklearn import metrics
 from seaborn.axisgrid import Grid
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold, KFold
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
-from sklearn.feature_selection import RFECV
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
-from sklearn.feature_selection import f_classif, mutual_info_classif, f_regression, mutual_info_regression, SelectPercentile, SelectFpr, SelectFdr, SelectFwe, GenericUnivariateSelect
-from sklearn.feature_selection import mutual_info_classif
-from sklearn.feature_selection import f_regression
-from sklearn.feature_selection import mutual_info_regression
-from sklearn.pipeline import Pipeline
+from sklearn.feature_selection import RFECV, SelectKBest, chi2, f_classif, mutual_info_classif, f_regression, mutual_info_regression, mutual_info_classif, f_regression, mutual_info_regression
+from mlxtend.feature_selection import SequentialFeatureSelector as SFS
+from sklearn.preprocessing import MinMaxScaler
 import pickle
 from imblearn.over_sampling import SMOTE
 
 from pathlib import Path
 
 DEBUG = False
-RS = 42
+RS = None
 
-def grid_search(classifier_name, submission_name):
+################################
+# Filter Based Feature Selection
+################################
 
-    # Split dataset into training set and test set
-    df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
-
-    X = df.drop(columns=['loan_status'])
-    y = df['loan_status']
-    
-    X, y = select_features(X, y)
-    # X , y = select_features_RFECV(X,y,classifier_name)
-    
-    params = get_grid_params(classifier_name)
-
-    classifier = get_classifier(classifier_name)
-
-    grid_search_var = GridSearchCV(
-        estimator=classifier,
-        param_grid = params,
-        scoring='roc_auc',
-        cv=StratifiedKFold(5, random_state=RS, shuffle=True),
-        n_jobs = -1)
-
-    grid_results = grid_search_var.fit(X, y)
-
-
-    print('Best Parameters: ', grid_results.best_params_)
-    print('Best Score: ', grid_results.best_score_)
-    
-
-def select_features(X, y):
+# Check if there are more filter based methods
+def filter_selection(X, y):
     models_folder = Path("models/")
 
     bestfeatures = SelectKBest(score_func=f_classif, k=12) # f_classif, f_regression
@@ -82,7 +51,7 @@ def select_features(X, y):
 
     return X, y
 
-
+# TODO - check if this is filter based
 def select_features_RFECV(X,y,classifier_name):
     models_folder = Path("models/")
     classifier=get_classifier(classifier_name)
@@ -103,25 +72,58 @@ def select_features_RFECV(X,y,classifier_name):
     return X, y
 
 
+#################################
+# Wrapper Based Feature Selection
+#################################
+# TODO - implement (in development)
+def sequential_selection(classifier, forward, X, y, k_features=12):
+    models_folder = Path("models/")
+    sfs = SFS(classifier,
+          k_features=k_features,
+          forward=forward,
+          floating=False,
+          scoring = 'roc_auc',
+          cv = 0)
+
+    sfs.fit(X, y)
+    print(list(sfs.k_feature_names_))
+    best_attributes = list(sfs.k_feature_names_)
+
+    pickle.dump(best_attributes, open(models_folder/'attributes.pkl', "wb"))
+
+    X = X[best_attributes]
+
+    return X, y
+
+
+########
+# Train
+########
+
 def train(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
+    df = normalize_if_not_tree_based(df, classifier_name)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
-    # Using SMOTE:
-    oversample = SMOTE()
-    X, y = oversample.fit_resample(X, y)
+    classifier = get_classifier_best(classifier_name) 
 
-    # SelectKBest Feature Selector
-    X, y = select_features(X, y)
+    # Filter Based Feature Selector
+    X, y = filter_selection(X, y)
+
+    # Wrapper Based Feature Selection
+    # X, y = sequential_selection(classifier, False, X, y)
+
+    # Using SMOTE:
+    oversample = SMOTE(random_state=RS,sampling_strategy='minority')
+    X, y = oversample.fit_resample(X, y)
 
     # RFECV Feature Selector 
     #X,y = select_features_RFECV(X,y,classifier_name)
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=RS)
 
-    classifier = get_classifier_best(classifier_name) 
     classifier.fit(X_train, y_train)
 
     print("Performance on the training set")
@@ -143,6 +145,10 @@ def train(classifier_name, submission_name):
     joblib.dump(classifier, filename)
 
 
+#############
+# Classifiers
+#############
+
 def get_classifier(classifier):
     if classifier == 'decision_tree':
         return DecisionTreeClassifier(random_state=RS)
@@ -156,7 +162,8 @@ def get_classifier(classifier):
         return SVC(random_state=RS)
     elif classifier == 'knn':
         return KNeighborsClassifier(random_state=RS)
-
+    elif classifier == 'neural_network':
+        return MLPClassifier() # TODO: random_state
 
 def get_grid_params(classifier):
     if classifier == 'decision_tree':
@@ -217,9 +224,16 @@ def get_grid_params(classifier):
           'metric_params':[None],
           'n_jobs':[None, 5]}
 
+    elif classifier == 'neural_network':
+        return {'hidden_layer_sizes': [(3,5,8,13,21,34)],
+          'activation': ['identity', 'logistic', 'tanh', 'relu'],
+          'solver':['lbfgs', 'sgd', 'adam'],
+          'learning_rate':['constant', 'invscaling', 'adaptive'],
+          'nesterovs_momentum':[True, False],
+          'early_stopping':[False, True]}
+
     #elif classifier == 'SelectKBest':
     #    return {'score_func': [ mutual_info_classif, chi2, f_regression, mutual_info_regression, SelectPercentile, SelectFpr, SelectFdr, SelectFwe, GenericUnivariateSelect, f_classif]}
-
 
 def get_classifier_best(classifier):
     if classifier == 'decision_tree':
@@ -240,12 +254,68 @@ def get_classifier_best(classifier):
         return SVC(random_state=RS, C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= 3, probability=True)
     elif classifier == 'knn':
         return KNeighborsClassifier(n_neighbors=5, weights='distance', leaf_size=20, p=1)
-        # return KNeighborsClassifier(n_neighbors=5)
+    elif classifier == 'neural_network':
+        return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs')
+        # return MLPClassifier()
+
+
+################################
+# Grid Search - Parameter Tuning
+################################
+
+def grid_search(classifier_name, submission_name):
+
+    # Split dataset into training set and test set
+    df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
+    df = normalize_if_not_tree_based(df, classifier_name)
+    X = df.drop(columns=['loan_status'])
+    y = df['loan_status']
+    
+    X, y = select_features(X, y)
+    # X , y = select_features_RFECV(X,y,classifier_name)
+    
+    params = get_grid_params(classifier_name)
+
+    classifier = get_classifier(classifier_name)
+
+    grid_search_var = GridSearchCV(
+        estimator=classifier,
+        param_grid = params,
+        scoring='roc_auc',
+        cv=StratifiedKFold(5, random_state=RS, shuffle=True),
+        n_jobs = -1)
+
+    grid_results = grid_search_var.fit(X, y)
+
+
+    print('Best Parameters: ', grid_results.best_params_)
+    print('Best Score: ', grid_results.best_score_)
+    
+    
+#########
+# Scorer
+#########
 
 def auc_scorer(y_true, y_pred):
     '''Scorer of Area Under Curve value'''
     fpr, tpr, _ = metrics.roc_curve(y_true, y_pred)
     return metrics.auc(fpr, tpr)
+
+
+###########
+# Normalize
+###########
+
+def normalize_if_not_tree_based(df, classifier_name):
+    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest'):
+        return normalize(df)
+    return df
+
+def normalize(df):
+    scaler = MinMaxScaler()
+    transformed = scaler.fit_transform(df)
+    df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
+    return df
 
 if __name__ == "__main__":
     if(DEBUG):

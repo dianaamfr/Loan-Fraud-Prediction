@@ -2,10 +2,12 @@ import joblib
 import sys
 import pandas as pd
 from pathlib import Path
+from sklearn.preprocessing import MinMaxScaler
 import pickle
 
-def test(classifier, submission_name):
+def test(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-test.csv', delimiter=",", low_memory=False)
+    normalize_if_not_tree_based(df, classifier_name)
 
     best_attributes = []
 
@@ -22,12 +24,11 @@ def test(classifier, submission_name):
     df = df[['loan_id'] + best_attributes]
 
     models_folder = Path("models/")
-    filename = models_folder/(classifier + '-' + submission_name + '.sav')
+    filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
     model = joblib.load(filename)
 
     x_test = df.set_index('loan_id')
     
-    print(x_test.head())
     prediction = model.predict_proba(x_test)[::,1]
 
     # Create the pandas DataFrame
@@ -38,7 +39,23 @@ def test(classifier, submission_name):
     df_result['Id'] = loan_ids
     df_result['Predicted'] = prediction
 
-    df_result.to_csv('results/' + classifier + '-' +  submission_name + '.csv', sep=',', index=False)
+    df_result.to_csv('results/' + classifier_name + '-' +  submission_name + '.csv', sep=',', index=False)
+
+
+###########
+# Normalize
+###########
+
+def normalize_if_not_tree_based(df, classifier_name):
+    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest'):
+        return normalize(df)
+    return df
+
+def normalize(df):
+    scaler = MinMaxScaler()
+    transformed = scaler.fit_transform(df)
+    df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
+    return df
 
 if __name__ == "__main__":
     test(sys.argv[1], sys.argv[2])
