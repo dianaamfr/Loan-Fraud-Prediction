@@ -89,9 +89,9 @@ IGNORE 1 ROWS
 -- Create and Load Disposition Table
 
 CREATE TABLE IF NOT EXISTS disposition (
-    disp_id DECIMAL NOT NULL,
+    disp_id INT NOT NULL,
     client_id INT NOT NULL,
-    account_id DECIMAL NOT NULL,
+    account_id INT NOT NULL,
     disp_type VARCHAR(20) NOT NULL
 );
 
