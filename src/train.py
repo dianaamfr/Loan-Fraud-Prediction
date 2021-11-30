@@ -9,7 +9,7 @@ from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold, cross_
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, BaggingClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -20,13 +20,51 @@ from sklearn.preprocessing import MinMaxScaler
 import pickle
 from pathlib import Path
 from imblearn.over_sampling import SMOTE
+from xgboost import XGBClassifier
 
-DEBUG = True
+DEBUG = False
 RS = 42
 
 ################################################
 # Cross-Validation comparison of the classifiers
 ################################################
+
+def cross_validation(kf, classifier, X, y):
+    auc_train_scores = []
+    auc_test_scores = []
+ 
+    for train_index , test_index in kf.split(X):
+
+        # print("Train: ", X[train_index].shape)
+        # print("Test: ", X[test_index].shape)
+
+        X_train , X_test = X.iloc[train_index,:],X.iloc[test_index,:]
+        y_train , y_test = y[train_index] , y[test_index]
+        
+        classifier.fit(X_train.values,y_train.values)
+
+        pred_proba_test = classifier.predict_proba(X_test)[:, 1]
+        pred_proba_train = classifier.predict_proba(X_train)[:, 1]
+        
+        print("TYPE: " + str(type(y_test)))
+
+        print("--------------")
+        print(y_test)
+        print(y_train)
+        print("--------------")
+
+        try:
+            auc_test = roc_auc_score(y_test, pred_proba_test)
+            auc_train = roc_auc_score(y_train, pred_proba_train)
+        except ValueError:
+            pass
+
+        auc_test_scores.append(auc_test)
+        auc_train_scores.append(auc_train)
+        
+    print('AUC Train scores of each fold - {}'.format(auc_train_scores))
+    print('AUC Test scores of each fold - {}'.format(auc_test_scores))
+
 
 def compare_classifiers(kfold, X_train, y_train):
     decision_tree_classifier = get_classifier_best('decision_tree')
@@ -36,40 +74,45 @@ def compare_classifiers(kfold, X_train, y_train):
     svm_classifier = get_classifier_best('svm')
     knn_classifier = get_classifier_best('knn')
     neural_network_classifier = get_classifier_best('neural_network')
+    xgboost_classifier=get_classifier_best('xgboost')
 
-    decision_tree_scores = cross_val_score(decision_tree_classifier, X_train, y_train, cv=kfold)
-    logistic_regression_scores = cross_val_score(logistic_regression_classifier, X_train, y_train, cv=kfold)
-    random_forest_scores = cross_val_score(random_forest_classifier, X_train, y_train, cv=kfold)
-    gradient_boosting_scores = cross_val_score(gradient_boosting_classifier, X_train, y_train, cv=kfold)
-    svm_scores = cross_val_score(svm_classifier, X_train, y_train, cv=kfold)
-    knn_scores = cross_val_score(knn_classifier, X_train, y_train, cv=kfold)
-    neural_network_scores = cross_val_score(neural_network_classifier, X_train, y_train, cv=kfold)
+    decision_tree_scores = cross_val_score(decision_tree_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
+    logistic_regression_scores = cross_val_score(logistic_regression_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
+    random_forest_scores = cross_val_score(random_forest_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
+    gradient_boosting_scores = cross_val_score(gradient_boosting_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
+    svm_scores = cross_val_score(svm_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
+    knn_scores = cross_val_score(knn_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
+    neural_network_scores = cross_val_score(neural_network_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
+    xgboost_scores = cross_val_score(xgboost_classifier, X_train, y_train, cv=kfold, scoring="roc_auc")
 
-    print("DECISION TREE: %0.2f accuracy with a standard deviation of %0.2f" % (decision_tree_scores.mean(), decision_tree_scores.std()))
-    print("LOGISTIC REGRESSION: %0.2f accuracy with a standard deviation of %0.2f" % (logistic_regression_scores.mean(), logistic_regression_scores.std()))
-    print("RANDOM FOREST: %0.2f accuracy with a standard deviation of %0.2f" % (random_forest_scores.mean(), random_forest_scores.std()))
-    print("GRADIENT BOOSTING: %0.2f accuracy with a standard deviation of %0.2f" % (gradient_boosting_scores.mean(), gradient_boosting_scores.std()))
-    print("SVM: %0.2f accuracy with a standard deviation of %0.2f" % (svm_scores.mean(), svm_scores.std()))
-    print("KNN: %0.2f accuracy with a standard deviation of %0.2f" % (knn_scores.mean(), knn_scores.std()))
-    print("NEURAL NETWORK: %0.2f accuracy with a standard deviation of %0.2f" % (neural_network_scores.mean(), neural_network_scores.std()))
+    print("DECISION TREE: %0.2f AUC score with a standard deviation of %0.2f" % (decision_tree_scores.mean(), decision_tree_scores.std()))
+    print("LOGISTIC REGRESSION: %0.2f AUC score with a standard deviation of %0.2f" % (logistic_regression_scores.mean(), logistic_regression_scores.std()))
+    print("RANDOM FOREST: %0.2f AUC score with a standard deviation of %0.2f" % (random_forest_scores.mean(), random_forest_scores.std()))
+    print("GRADIENT BOOSTING: %0.2f AUC score with a standard deviation of %0.2f" % (gradient_boosting_scores.mean(), gradient_boosting_scores.std()))
+    print("SVM: %0.2f AUC score with a standard deviation of %0.2f" % (svm_scores.mean(), svm_scores.std()))
+    print("KNN: %0.2f AUC score with a standard deviation of %0.2f" % (knn_scores.mean(), knn_scores.std()))
+    print("NEURAL NETWORK: %0.2f AUC score with a standard deviation of %0.2f" % (neural_network_scores.mean(), neural_network_scores.std()))
+    print("XG BOOST: %0.2f AUC score with a standard deviation of %0.2f" % (xgboost_scores.mean(), xgboost_scores.std()))
 
 def train(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
-    df = normalize_if_not_tree_based(df, classifier_name)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
-
-    # oversample = SMOTE()
-    # X, y = oversample.fit_resample(X, y)
-
-    X, y = filter_feature_selection(X, y)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
+    df = normalize_if_not_tree_based(X, classifier_name)
 
     classifier = get_classifier_best(classifier_name)
+    kfold = KFold(n_splits=5)
 
-    kfold = KFold(n_splits=10)
+    oversample = SMOTE(random_state=RS)
+    X, y = oversample.fit_resample(X, y)
+
+    X, y = filter_feature_selection(X, y, 15)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, stratify=y, random_state=RS)
+    
+    # cross_validation(kfold, classifier, X, y)
+
     compare_classifiers(kfold, X_train, y_train)
 
     classifier.fit(X_train.values, y_train.values)
@@ -79,14 +122,12 @@ def train(classifier_name, submission_name):
     y_train_proba = classifier.predict_proba(X_train.values)
     auc_train = roc_auc_score(y_train, y_train_proba[:, 1])
     print(f"Train ROC AUC: {auc_train}")
-    #print(y_train_pred)
 
     print("\nPerformance on the test set")
     y_test_pred = classifier.predict(X_test.values)
     y_test_proba = classifier.predict_proba(X_test.values)
     auc_test = roc_auc_score(y_test, y_test_proba[:, 1])
     print(f"Test ROC AUC: {auc_test}")
-    #print(y_test_pred)
 
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
@@ -102,7 +143,7 @@ def grid_search(classifier_name, submission_name):
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
-    X, y = filter_feature_selection(X, y)
+    X, y = filter_feature_selection(X, y, 15)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=5)
 
@@ -115,7 +156,7 @@ def grid_search(classifier_name, submission_name):
         cv=KFold(5, random_state=RS, shuffle=True),
         n_jobs = -1)
 
-    grid_results = grid_search_var.fit(X_train.values, y_train)
+    grid_results = grid_search_var.fit(X_train.values, y_train.values)
 
     print('Best Parameters: ', grid_results.best_params_)
     print('Best Score: ', grid_results.best_score_)
@@ -125,21 +166,21 @@ def grid_search(classifier_name, submission_name):
 # Filter Based Feature Selection
 ################################  
 
-def filter_feature_selection(X, y):
+def filter_feature_selection(X, y, k):
     models_folder = Path("models/")
 
-    bestfeatures = SelectKBest(score_func=f_classif, k=10) # f_classif, f_regression
+    bestfeatures = SelectKBest(score_func=f_classif, k=k) # f_classif, f_regression
 
-    fit = bestfeatures.fit(X.values,y)
+    fit = bestfeatures.fit(X.values,y.values)
     dfscores = pd.DataFrame(fit.scores_)
     dfcolumns = pd.DataFrame(X.columns)
     featureScores = pd.concat([dfcolumns,dfscores],axis=1)
     featureScores.columns = ['Specs','Score']  #naming the dataframe columns
-    print(featureScores.nlargest(10, 'Score'))  #print 10 best features
+    print(featureScores.nlargest(k, 'Score'))  #print 10 best features
 
-    print(featureScores.nlargest(10,'Score')['Specs'].values.tolist())
+    print(featureScores.nlargest(k,'Score')['Specs'].values.tolist())
 
-    best_attributes = featureScores.nlargest(10,'Score')['Specs'].values.tolist()
+    best_attributes = featureScores.nlargest(k,'Score')['Specs'].values.tolist()
 
     pickle.dump(best_attributes, open(models_folder/'attributes.pkl', "wb"))
 
@@ -153,7 +194,7 @@ def select_features_RFECV(X,y,classifier_name):
     classifier=get_classifier(classifier_name)
 
     bestfeatures = RFECV(classifier,scoring='roc_auc') 
-    fit = bestfeatures.fit(X.values,y)
+    fit = bestfeatures.fit(X.values,y.values)
     dfscores = pd.DataFrame(fit.ranking_ )
     dfcolumns = pd.DataFrame(X.columns)
     featureScores = pd.concat([dfcolumns,dfscores],axis=1)
@@ -180,7 +221,7 @@ def sequential_selection(classifier, forward, X, y, k_features=12):
           scoring = 'roc_auc',
           cv = 0)
 
-    sfs.fit(X.values, y)
+    sfs.fit(X.values, y.values)
     print(list(sfs.k_feature_names_))
     best_attributes = list(sfs.k_feature_names_)
 
@@ -207,6 +248,10 @@ def get_classifier(classifier):
         return KNeighborsClassifier(random_state=RS)
     elif classifier == 'neural_network':
         return MLPClassifier(random_state=RS, max_iter=1000)
+    elif classifier == 'xgboost':
+        return XGBClassifier(random_state=RS)
+    elif classifier == 'bagging':
+        return BaggingClassifier(random_state=RS)
 
 def get_grid_params(classifier):
     if classifier == 'decision_tree':
@@ -228,7 +273,7 @@ def get_grid_params(classifier):
                 'class_weight': ["balanced", None]}
 
     elif classifier == 'random_forest':
-        max_depth = [int(x) for x in range(2, 16, 4)]
+        max_depth = [int(x) for x in range(2, 40, 4)]
         max_depth.append(None)
 
         return {'n_estimators': [int(x) for x in range(2, 14, 2)],
@@ -275,28 +320,46 @@ def get_grid_params(classifier):
           'nesterovs_momentum':[True, False],
           'early_stopping':[False, True]}
 
-    #elif classifier == 'SelectKBest':
-    #    return {'score_func': [ mutual_info_classif, chi2, f_regression, mutual_info_regression, SelectPercentile, SelectFpr, SelectFdr, SelectFwe, GenericUnivariateSelect, f_classif]}
+    elif classifier == 'xgboost':
+        return {
+            'min_child_weight': [1, 5, 10],
+            'gamma': [0.5, 1, 1.5, 2, 5],
+            'subsample': [0.6, 0.8, 1.0],
+            'colsample_bytree': [0.6, 0.8, 1.0],
+            'max_depth': [3, 4, 5]
+        }
+
+    elif classifier == 'bagging':
+        return {
+            'bootstrap_features': [False, True],
+            'max_features': [0.5, 0.7, 1.0],
+            'max_samples': [0.5, 0.7, 1.0],
+            'n_estimators': [2, 5, 10, 20]
+        }
 
 # TODO - update this according to grid search
 def get_classifier_best(classifier):
     if classifier == 'decision_tree':
         # return DecisionTreeClassifier(criterion='entropy', splitter='random')
-        return DecisionTreeClassifier(random_state=RS)
+        return DecisionTreeClassifier()
     elif classifier == 'logistic_regression':
-        return LogisticRegression(C = 0.01, class_weight= None, penalty= 'l2', solver= 'newton-cg', max_iter=4000, random_state=RS)
+        return LogisticRegression(C = 0.01, class_weight= None, penalty= 'l2', solver= 'newton-cg', max_iter=200)
     elif classifier == 'random_forest':
-        return RandomForestClassifier(class_weight= 'balanced_subsample', criterion= 'gini', max_depth= 30, random_state=RS)
+        return RandomForestClassifier(class_weight= 'balanced_subsample', criterion= 'gini', max_depth= 30)
     elif classifier == 'gradient_boosting':
-        return GradientBoostingClassifier(criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12, random_state=RS)
+        return GradientBoostingClassifier(criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12)
     elif classifier == 'svm':
-        return SVC(C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= -1, probability=True, random_state=RS)
+        return SVC(C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= -1, probability=True)
     elif classifier == 'knn':
         return KNeighborsClassifier(n_neighbors=5, weights='distance', leaf_size=20, p=1)
     elif classifier == 'neural_network':
-        return MLPClassifier(activation='identity', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='adam', max_iter=1000, random_state=RS)
+        return MLPClassifier(activation='identity', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='adam', max_iter=1000)
         # return MLPClassifier()
-
+    elif classifier == 'xgboost':
+        return XGBClassifier(colsample_bytree= 0.8, gamma= 1.5, max_depth= 3, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='mlogloss')
+    elif classifier == 'bagging':
+        return BaggingClassifier(bootstrap_features= True, max_features= 1.0, max_samples= 1.0, n_estimators= 20)
+        
 ###########
 # Normalize
 ###########

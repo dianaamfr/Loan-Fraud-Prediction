@@ -140,13 +140,9 @@ def clean_districts(db):
     df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
     df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
     
-    # Replace nr of crimes and unemployment missing values by median
-    # TODO: maybe try to extract the equation of the relations between 96 and 95 and use it instead
-    median_nr_crimes_95 = df["nr_commited_crimes_95"].median(skipna=True)
-    median_unemployment_rate_95 = df["unemployment_rate_95"].median(skipna=True)
-
-    df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
-    df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
+    # Replace nr of crimes and unemployment missing values by 96 values
+    df["nr_commited_crimes_95"].fillna(df['nr_commited_crimes_96'], inplace=True)
+    df["unemployment_rate_95"].fillna(df['unemployment_rate_96'], inplace=True)
 
 
     # FEATURE EXTRACTION
@@ -220,8 +216,8 @@ def clean_transactions(db, test=False):
     avg_amount_df = pd.merge(avg_amount_credit, avg_amount_withdrawal, on="account_id", how="outer")
     avg_amount_df.fillna(0, inplace=True)
 
-    avg_amount_total = df_copy.groupby(['account_id']).agg({'amount':['mean']}).reset_index()
-    avg_amount_total.columns = ['account_id', 'avg_amount_total']
+    avg_amount_total = df_copy.groupby(['account_id']).agg({'amount':['mean','min', 'max']}).reset_index()
+    avg_amount_total.columns = ['account_id', 'avg_amount_total', 'min_amount', 'max_amount']
     new_df = pd.merge(avg_amount_df, avg_amount_total, on="account_id", how="outer")
     new_df.fillna(0, inplace=True)
 
@@ -266,17 +262,13 @@ def clean_transactions(db, test=False):
 
 
 def clean_cards(db, test=False):
-    table = 'card_test' if test is True else 'card_train'
-    df = db.df_query("SELECT * FROM " + table)
-
-    # Drop issuance date
-    df.drop(columns=['issued'])
+    loan_table = 'loan_test' if test is True else 'loan_train'
+    card_table = 'card_test' if test is True else 'card_train'
     
-    # Encode card_type
-    df = encode_category(df, 'card_type')
-
-    return df
-
+    df_card = db.df_query('SELECT account_id, COUNT(card_id) AS num_cards FROM ' + loan_table + \
+        ' JOIN disposition USING(account_id) LEFT JOIN ' + card_table + ' USING(disp_id) GROUP BY account_id')
+    
+    return df_card
 
 #########
 # Merge
@@ -297,7 +289,7 @@ def merge_datasets(db, test=False):
     # TODO - fazer 2 gráficos para escolher os dados do district relativos à account ou ao cliente
     df = pd.merge(df, district, left_on='client_district_id', right_on='district_id')
     df = pd.merge(df, transaction, how="left", on="account_id")
-    # TODO - merge CARD.
+    df = pd.merge(df, card, how="left", on="account_id")
 
     return df
 
@@ -313,6 +305,10 @@ def extract_features(df):
 
     # Boolean value telling if the account was created on the owner district
     df['same_district'] = df['account_district_id'] == df['client_district_id']
+
+    # Has card
+    df['has_card'] = df['num_cards'] > 0
+    df.drop(columns=['num_cards'], inplace=True)
 
     return df
 
@@ -352,6 +348,8 @@ def clean(output_name):
     df_train = df_train[cols]
 
     df_train = df_train.set_index('loan_id')
+
+    transform_status(df_train)
 
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 

@@ -19,9 +19,9 @@ def test(classifier_name, submission_name):
     print(best_attributes)
 
     df = df[['loan_id'] + best_attributes]
+
     x_test = df.set_index('loan_id')
     x_test = normalize_if_not_tree_based(x_test, classifier_name)
-    print(x_test.head())
 
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
