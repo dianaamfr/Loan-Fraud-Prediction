@@ -144,9 +144,15 @@ def clean_districts(db):
     # TODO: maybe try to extract the equation of the relations between 96 and 95 and use it instead
     median_nr_crimes_95 = df["nr_commited_crimes_95"].median(skipna=True)
     median_unemployment_rate_95 = df["unemployment_rate_95"].median(skipna=True)
+    # mean_nr_crimes_95 = df["nr_commited_crimes_95"].mean(skipna=True)
+    # mean_unemployment_rate_95 = df["unemployment_rate_95"].mean(skipna=True)
 
     df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
     df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
+    
+    # Fill the missing values with the mean
+    # df["nr_commited_crimes_95"].fillna(mean_nr_crimes_95, inplace=True)
+    # df["unemployment_rate_95"].fillna(mean_unemployment_rate_95, inplace=True)
 
 
     # FEATURE EXTRACTION
