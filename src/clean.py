@@ -272,16 +272,13 @@ def clean_transactions(db, test=False):
 
 
 def clean_cards(db, test=False):
-    table = 'card_test' if test is True else 'card_train'
-    df = db.df_query("SELECT * FROM " + table)
-
-    # Drop issuance date
-    df.drop(columns=['issued'])
+    loan_table = 'loan_test' if test is True else 'loan_train'
+    card_table = 'card_test' if test is True else 'card_train'
     
-    # Encode card_type
-    df = encode_category(df, 'card_type')
-
-    return df
+    df_card = db.df_query('SELECT account_id, COUNT(card_id) AS num_cards FROM ' + loan_table + \
+        ' JOIN disposition USING(account_id) LEFT JOIN ' + card_table + ' USING(disp_id) GROUP BY account_id')
+    
+    return df_card
 
 
 #########
@@ -295,7 +292,7 @@ def merge_datasets(db, test=False):
     client = clean_clients(db)
     district = clean_districts(db)
     transaction = clean_transactions(db, test)
-    card = clean_cards(db, test)
+    cards = clean_cards(db, test)
     
     df = pd.merge(loan, account, on='account_id', how="left")
     df = pd.merge(df, disp,  on='account_id', how="left")
@@ -303,7 +300,7 @@ def merge_datasets(db, test=False):
     # TODO - fazer 2 gráficos para escolher os dados do district relativos à account ou ao cliente
     df = pd.merge(df, district, left_on='client_district_id', right_on='district_id')
     df = pd.merge(df, transaction, how="left", on="account_id")
-    # TODO - merge CARD.
+    df = pd.merge(df, cards, how="left", on="account_id")
 
     return df
 
@@ -319,6 +316,10 @@ def extract_features(df):
 
     # Boolean value telling if the account was created on the owner district
     df['same_district'] = df['account_district_id'] == df['client_district_id']
+
+    # Has card
+    df['has_card'] = df['num_cards'] > 0
+    df.drop(columns=['num_cards'], inplace=True)
 
     return df
 
@@ -360,7 +361,6 @@ def clean(output_name):
     df_train = df_train.set_index('loan_id')
 
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
-
 
     ############
     # TEST DATA
