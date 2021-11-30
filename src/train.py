@@ -39,29 +39,31 @@ def train(classifier_name, submission_name):
 
     X, y = filter_feature_selection(X, y)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
 
     classifier = get_classifier_best(classifier_name)
+    kf=KFold(5, random_state=RS, shuffle=True)
 
-    scores = cross_val_score(classifier, X, y, cv=KFold(5, random_state=RS, shuffle=True), scoring='roc_auc')
-    print("Cross Validation Scores: ")
-    print(scores)
-    print()
-    classifier.fit(X_train, y_train)
+    auc_train_scores = []
+    auc_test_scores = []
+ 
+    for train_index , test_index in kf.split(X):
+        X_train , X_test = X.iloc[train_index,:],X.iloc[test_index,:]
+        y_train , y_test = y[train_index] , y[test_index]
+        
+        classifier.fit(X_train,y_train)
 
-    print("Performance on the training set")
-    y_train_pred = classifier.predict(X_test)
-    y_train_proba = classifier.predict_proba(X_train)
-    auc_train = roc_auc_score(y_train, y_train_proba[:, 1])
-    print(f"Train ROC AUC: {auc_train}")
-    #print(y_train_pred)
+        pred_proba_test = classifier.predict_proba(X_test)[:, 1]
+        pred_proba_train = classifier.predict_proba(X_train)[:, 1]
+        
+        auc_test = roc_auc_score(y_test, pred_proba_test)
+        auc_train = roc_auc_score(y_train, pred_proba_train)
 
-    print("\nPerformance on the test set")
-    y_test_pred = classifier.predict(X_test)
-    y_test_proba = classifier.predict_proba(X_test)
-    auc_test = roc_auc_score(y_test, y_test_proba[:, 1])
-    print(f"Test ROC AUC: {auc_test}")
-    #print(y_test_pred)
+        auc_test_scores.append(auc_test)
+        auc_train_scores.append(auc_train)
+  
+    print('AUC Train scores of each fold - {}'.format(auc_train_scores))
+    print('AUC Test scores of each fold - {}'.format(auc_test_scores))
 
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
@@ -161,7 +163,6 @@ def sequential_selection(classifier, forward, X, y, k_features=12):
     X = X[best_attributes]
 
     return X, y
-
 
 
 def get_classifier(classifier):
