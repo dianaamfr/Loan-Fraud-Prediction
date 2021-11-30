@@ -5,7 +5,7 @@ from sklearn import metrics
 from seaborn.axisgrid import Grid
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold, cross_val_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression, LinearRegression
@@ -21,9 +21,37 @@ import pickle
 from pathlib import Path
 from imblearn.over_sampling import SMOTE
 
-DEBUG = False
+DEBUG = True
 RS = 42
 
+################################################
+# Cross-Validation comparison of the classifiers
+################################################
+
+def compare_classifiers(kfold, X_train, y_train):
+    decision_tree_classifier = get_classifier_best('decision_tree')
+    logistic_regression_classifier = get_classifier_best('logistic_regression')
+    random_forest_classifier = get_classifier_best('random_forest')
+    gradient_boosting_classifier = get_classifier_best('gradient_boosting')
+    svm_classifier = get_classifier_best('svm')
+    knn_classifier = get_classifier_best('knn')
+    neural_network_classifier = get_classifier_best('neural_network')
+
+    decision_tree_scores = cross_val_score(decision_tree_classifier, X_train, y_train, cv=kfold)
+    logistic_regression_scores = cross_val_score(logistic_regression_classifier, X_train, y_train, cv=kfold)
+    random_forest_scores = cross_val_score(random_forest_classifier, X_train, y_train, cv=kfold)
+    gradient_boosting_scores = cross_val_score(gradient_boosting_classifier, X_train, y_train, cv=kfold)
+    svm_scores = cross_val_score(svm_classifier, X_train, y_train, cv=kfold)
+    knn_scores = cross_val_score(knn_classifier, X_train, y_train, cv=kfold)
+    neural_network_scores = cross_val_score(neural_network_classifier, X_train, y_train, cv=kfold)
+
+    print("DECISION TREE: %0.2f accuracy with a standard deviation of %0.2f" % (decision_tree_scores.mean(), decision_tree_scores.std()))
+    print("LOGISTIC REGRESSION: %0.2f accuracy with a standard deviation of %0.2f" % (logistic_regression_scores.mean(), logistic_regression_scores.std()))
+    print("RANDOM FOREST: %0.2f accuracy with a standard deviation of %0.2f" % (random_forest_scores.mean(), random_forest_scores.std()))
+    print("GRADIENT BOOSTING: %0.2f accuracy with a standard deviation of %0.2f" % (gradient_boosting_scores.mean(), gradient_boosting_scores.std()))
+    print("SVM: %0.2f accuracy with a standard deviation of %0.2f" % (svm_scores.mean(), svm_scores.std()))
+    print("KNN: %0.2f accuracy with a standard deviation of %0.2f" % (knn_scores.mean(), knn_scores.std()))
+    print("NEURAL NETWORK: %0.2f accuracy with a standard deviation of %0.2f" % (neural_network_scores.mean(), neural_network_scores.std()))
 
 def train(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
@@ -40,18 +68,22 @@ def train(classifier_name, submission_name):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
 
     classifier = get_classifier_best(classifier_name)
-    classifier.fit(X_train, y_train)
+
+    kfold = KFold(n_splits=10)
+    compare_classifiers(kfold, X_train, y_train)
+
+    classifier.fit(X_train.values, y_train.values)
 
     print("Performance on the training set")
-    y_train_pred = classifier.predict(X_test)
-    y_train_proba = classifier.predict_proba(X_train)
+    y_train_pred = classifier.predict(X_test.values)
+    y_train_proba = classifier.predict_proba(X_train.values)
     auc_train = roc_auc_score(y_train, y_train_proba[:, 1])
     print(f"Train ROC AUC: {auc_train}")
     #print(y_train_pred)
 
     print("\nPerformance on the test set")
-    y_test_pred = classifier.predict(X_test)
-    y_test_proba = classifier.predict_proba(X_test)
+    y_test_pred = classifier.predict(X_test.values)
+    y_test_proba = classifier.predict_proba(X_test.values)
     auc_test = roc_auc_score(y_test, y_test_proba[:, 1])
     print(f"Test ROC AUC: {auc_test}")
     #print(y_test_pred)
@@ -71,7 +103,9 @@ def grid_search(classifier_name, submission_name):
     y = df['loan_status']
 
     X, y = filter_feature_selection(X, y)
-    
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=5)
+
     params = get_grid_params(classifier_name)
     classifier = get_classifier(classifier_name)
     grid_search_var = GridSearchCV(
@@ -81,7 +115,7 @@ def grid_search(classifier_name, submission_name):
         cv=KFold(5, random_state=RS, shuffle=True),
         n_jobs = -1)
 
-    grid_results = grid_search_var.fit(X, y)
+    grid_results = grid_search_var.fit(X_train.values, y_train)
 
     print('Best Parameters: ', grid_results.best_params_)
     print('Best Score: ', grid_results.best_score_)
@@ -95,7 +129,8 @@ def filter_feature_selection(X, y):
     models_folder = Path("models/")
 
     bestfeatures = SelectKBest(score_func=f_classif, k=10) # f_classif, f_regression
-    fit = bestfeatures.fit(X,y)
+
+    fit = bestfeatures.fit(X.values,y)
     dfscores = pd.DataFrame(fit.scores_)
     dfcolumns = pd.DataFrame(X.columns)
     featureScores = pd.concat([dfcolumns,dfscores],axis=1)
@@ -116,10 +151,10 @@ def filter_feature_selection(X, y):
 def select_features_RFECV(X,y,classifier_name):
     models_folder = Path("models/")
     classifier=get_classifier(classifier_name)
-    
+
     bestfeatures = RFECV(classifier,scoring='roc_auc') 
-    fit = bestfeatures.fit(X,y)
-    dfscores = pd.DataFrame(fit.ranking_ ) 
+    fit = bestfeatures.fit(X.values,y)
+    dfscores = pd.DataFrame(fit.ranking_ )
     dfcolumns = pd.DataFrame(X.columns)
     featureScores = pd.concat([dfcolumns,dfscores],axis=1)
     
@@ -145,7 +180,7 @@ def sequential_selection(classifier, forward, X, y, k_features=12):
           scoring = 'roc_auc',
           cv = 0)
 
-    sfs.fit(X, y)
+    sfs.fit(X.values, y)
     print(list(sfs.k_feature_names_))
     best_attributes = list(sfs.k_feature_names_)
 
@@ -171,7 +206,7 @@ def get_classifier(classifier):
     elif classifier == 'knn':
         return KNeighborsClassifier(random_state=RS)
     elif classifier == 'neural_network':
-        return MLPClassifier() # TODO: random_state
+        return MLPClassifier(random_state=RS, max_iter=1000)
 
 def get_grid_params(classifier):
     if classifier == 'decision_tree':
@@ -187,7 +222,7 @@ def get_grid_params(classifier):
                 'class_weight': [None],
                 'ccp_alpha': [0.0]}
     elif classifier == 'logistic_regression':
-        return {'penalty': ['l2', 'none'],
+        return {'penalty': ['l1', 'l2', 'elasticnet', 'none'],
                 'C': [0.01, 0.05, 0.1, 0.2, 0.5, 1.0],
                 'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
                 'class_weight': ["balanced", None]}
@@ -235,7 +270,7 @@ def get_grid_params(classifier):
     elif classifier == 'neural_network':
         return {'hidden_layer_sizes': [(3,5,8,13,21,34)],
           'activation': ['identity', 'logistic', 'tanh', 'relu'],
-          'solver':['lbfgs', 'sgd', 'adam'],
+          'solver':['sgd', 'adam'],
           'learning_rate':['constant', 'invscaling', 'adaptive'],
           'nesterovs_momentum':[True, False],
           'early_stopping':[False, True]}
@@ -247,19 +282,19 @@ def get_grid_params(classifier):
 def get_classifier_best(classifier):
     if classifier == 'decision_tree':
         # return DecisionTreeClassifier(criterion='entropy', splitter='random')
-        return DecisionTreeClassifier()
+        return DecisionTreeClassifier(random_state=RS)
     elif classifier == 'logistic_regression':
-        return LogisticRegression(C = 0.01, class_weight= 'balanced', penalty= 'none', solver= 'saga')
+        return LogisticRegression(C = 0.01, class_weight= None, penalty= 'l2', solver= 'newton-cg', max_iter=4000, random_state=RS)
     elif classifier == 'random_forest':
-        return RandomForestClassifier(class_weight= 'balanced_subsample', criterion= 'gini', max_depth= 30)
+        return RandomForestClassifier(class_weight= 'balanced_subsample', criterion= 'gini', max_depth= 30, random_state=RS)
     elif classifier == 'gradient_boosting':
-        return GradientBoostingClassifier(random_state=RS, criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12)
+        return GradientBoostingClassifier(criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12, random_state=RS)
     elif classifier == 'svm':
-        return SVC(random_state=RS, C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= 3, probability=True)
+        return SVC(C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= -1, probability=True, random_state=RS)
     elif classifier == 'knn':
         return KNeighborsClassifier(n_neighbors=5, weights='distance', leaf_size=20, p=1)
     elif classifier == 'neural_network':
-        return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs')
+        return MLPClassifier(activation='identity', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='adam', max_iter=1000, random_state=RS)
         # return MLPClassifier()
 
 ###########
@@ -283,6 +318,3 @@ if __name__ == "__main__":
         grid_search(sys.argv[1], sys.argv[2])
     else:
         train(sys.argv[1], sys.argv[2])
-
-
-    
