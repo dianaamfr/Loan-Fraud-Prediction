@@ -1,11 +1,13 @@
 import sys
 import joblib
 import pandas as pd
+from scipy.sparse.construct import rand
 from sklearn import metrics
 from seaborn.axisgrid import Grid
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression, LinearRegression
@@ -32,14 +34,19 @@ def train(classifier_name, submission_name):
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
-    # oversample = SMOTE()
-    # X, y = oversample.fit_resample(X, y)
+    oversample = SMOTE(random_state=RS)
+    X, y = oversample.fit_resample(X, y)
 
     X, y = filter_feature_selection(X, y)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
 
     classifier = get_classifier_best(classifier_name)
+
+    scores = cross_val_score(classifier, X, y, cv=KFold(5, random_state=RS, shuffle=True), scoring='roc_auc')
+    print("Cross Validation Scores: ")
+    print(scores)
+    print()
     classifier.fit(X_train, y_train)
 
     print("Performance on the training set")
@@ -94,17 +101,17 @@ def grid_search(classifier_name, submission_name):
 def filter_feature_selection(X, y):
     models_folder = Path("models/")
 
-    bestfeatures = SelectKBest(score_func=f_classif, k=10) # f_classif, f_regression
+    bestfeatures = SelectKBest(score_func=f_classif, k=15) # f_classif, f_regression
     fit = bestfeatures.fit(X,y)
     dfscores = pd.DataFrame(fit.scores_)
     dfcolumns = pd.DataFrame(X.columns)
     featureScores = pd.concat([dfcolumns,dfscores],axis=1)
     featureScores.columns = ['Specs','Score']  #naming the dataframe columns
-    print(featureScores.nlargest(10, 'Score'))  #print 10 best features
+    print(featureScores.nlargest(15, 'Score'))  #print 10 best features
 
-    print(featureScores.nlargest(10,'Score')['Specs'].values.tolist())
+    print(featureScores.nlargest(15,'Score')['Specs'].values.tolist())
 
-    best_attributes = featureScores.nlargest(10,'Score')['Specs'].values.tolist()
+    best_attributes = featureScores.nlargest(15,'Score')['Specs'].values.tolist()
 
     pickle.dump(best_attributes, open(models_folder/'attributes.pkl', "wb"))
 
@@ -249,7 +256,7 @@ def get_classifier_best(classifier):
         # return DecisionTreeClassifier(criterion='entropy', splitter='random')
         return DecisionTreeClassifier()
     elif classifier == 'logistic_regression':
-        return LogisticRegression(C = 0.01, class_weight= 'balanced', penalty= 'none', solver= 'saga')
+        return LogisticRegression(C = 0.1, class_weight= 'balanced', penalty= 'l2', solver= 'saga', max_iter=200)
     elif classifier == 'random_forest':
         return RandomForestClassifier(class_weight= 'balanced_subsample', criterion= 'gini', max_depth= 30)
     elif classifier == 'gradient_boosting':
