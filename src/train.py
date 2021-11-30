@@ -19,6 +19,7 @@ from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 from sklearn.preprocessing import MinMaxScaler
 import pickle
 from pathlib import Path
+from imblearn.over_sampling import SMOTE
 
 DEBUG = False
 RS = 42
@@ -30,6 +31,9 @@ def train(classifier_name, submission_name):
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
+
+    # oversample = SMOTE()
+    # X, y = oversample.fit_resample(X, y)
 
     X, y = filter_feature_selection(X, y)
 
@@ -56,7 +60,7 @@ def train(classifier_name, submission_name):
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
     joblib.dump(classifier, filename)
 
-
+# smote for grid search https://stackoverflow.com/questions/50245684/using-smote-with-gridsearchcv-in-scikit-learn
 def grid_search(classifier_name, submission_name):
 
     # Split dataset into training set and test set
