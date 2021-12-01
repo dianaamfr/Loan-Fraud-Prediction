@@ -147,13 +147,16 @@ def clean_districts(db):
     # mean_nr_crimes_95 = df["nr_commited_crimes_95"].mean(skipna=True)
     # mean_unemployment_rate_95 = df["unemployment_rate_95"].mean(skipna=True)
 
-    df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
-    df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
+    # df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
+    # df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
     
     # Fill the missing values with the mean
     # df["nr_commited_crimes_95"].fillna(mean_nr_crimes_95, inplace=True)
     # df["unemployment_rate_95"].fillna(mean_unemployment_rate_95, inplace=True)
 
+    # Replace nr of crimes and unemployment missing values by 96 values
+    df["nr_commited_crimes_95"].fillna(df['nr_commited_crimes_96'], inplace=True)
+    df["unemployment_rate_95"].fillna(df['unemployment_rate_96'], inplace=True)
 
     # FEATURE EXTRACTION
 
@@ -360,6 +363,8 @@ def clean(output_name):
 
     df_train = df_train.set_index('loan_id')
 
+    transform_status(df_train)
+
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
     ############
@@ -374,6 +379,7 @@ def clean(output_name):
     df_test = df_test.set_index('loan_id')
 
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
+
 
 
 if __name__ == "__main__":

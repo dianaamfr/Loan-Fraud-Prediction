@@ -22,6 +22,7 @@ from sklearn.preprocessing import MinMaxScaler
 import pickle
 from pathlib import Path
 from imblearn.over_sampling import SMOTE
+from xgboost import XGBClassifier
 
 DEBUG = False
 RS = 42
@@ -268,6 +269,8 @@ def get_classifier_best(classifier):
         return KNeighborsClassifier(n_neighbors=5, weights='distance', leaf_size=20, p=1)
     elif classifier == 'neural_network':
         return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs')
+    elif classifier == 'xgboost':
+        return XGBClassifier(colsample_bytree= 0.8, gamma= 1.5, max_depth= 3, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='mlogloss')
         # return MLPClassifier()
 
 ###########
@@ -275,7 +278,7 @@ def get_classifier_best(classifier):
 ###########
 
 def normalize_if_not_tree_based(df, classifier_name):
-    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest'):
+    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest' and classifier_name != 'xgboost'):
         return normalize(df)
     return df
 

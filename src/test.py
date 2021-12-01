@@ -46,7 +46,7 @@ def test(classifier_name, submission_name):
 ###########
 
 def normalize_if_not_tree_based(df, classifier_name):
-    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest'):
+    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest' and classifier_name != 'xgboost'):
         return normalize(df)
     return df
 
