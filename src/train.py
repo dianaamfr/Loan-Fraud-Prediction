@@ -27,6 +27,7 @@ from pathlib import Path
 from imblearn.over_sampling import SMOTE
 from xgboost import XGBClassifier
 from sklearn import preprocessing
+from statistics import mean
 
 DEBUG = False
 RS = 42
@@ -115,6 +116,9 @@ def cross_validation(X, y, classifier, kf, num_splits):
     print('AUC Train scores of each fold - {}'.format(auc_train_scores))
     print('AUC Test scores of each fold - {}'.format(auc_test_scores))
 
+    print('Average Train AUC = ',round(mean(auc_train_scores),3))
+    print('Average Test AUC = ',round(mean(auc_test_scores),6))
+
 def compare_classifiers(kfold, X, y, X_normalized, y_normalized):
     decision_tree_classifier = get_classifier_best('decision_tree')
     logistic_regression_classifier = get_classifier_best('logistic_regression')
@@ -152,20 +156,20 @@ def train(classifier_name, submission_name):
 
     scaler = MinMaxScaler()
     df = normalize_if_not_tree_based(df, classifier_name, scaler)
-    normalized_df = normalize(df, scaler)
+    #normalized_df = normalize(df, scaler)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
-    X_normalized = normalized_df.drop(columns=['loan_status'])
-    y_normalized = normalized_df['loan_status']
+    #X_normalized = normalized_df.drop(columns=['loan_status'])
+    #y_normalized = normalized_df['loan_status']
 
     oversample = SMOTE(random_state=RS)
     X, y = oversample.fit_resample(X, y)
-    X_normalized, y_normalized = oversample.fit_resample(X_normalized, y_normalized)
+    #X_normalized, y_normalized = oversample.fit_resample(X_normalized, y_normalized)
 
     X, y = filter_feature_selection(X, y)
-    X_normalized, y_normalized = filter_feature_selection(X_normalized, y_normalized)
+    #X_normalized, y_normalized = filter_feature_selection(X_normalized, y_normalized)
 
     classifier = get_classifier_best(classifier_name)
     
@@ -173,7 +177,6 @@ def train(classifier_name, submission_name):
     kf = KFold(num_splits, random_state=RS, shuffle=True)
 
     #compare_classifiers(kf, X, y, X_normalized, y_normalized)
-
     cross_validation(X, y, classifier, kf, num_splits)
 
     #no_cross_validation(X, y, classifier, kf)
@@ -215,7 +218,7 @@ def grid_search(classifier_name, submission_name):
 # Filter Based Feature Selection
 ################################  
 
-def filter_feature_selection(X, y, k=15):
+def filter_feature_selection(X, y, k=18):
     models_folder = Path("models/")
 
     bestfeatures = SelectKBest(score_func=f_classif, k=k) # f_classif, f_regression
