@@ -229,8 +229,8 @@ def clean_transactions(db, test=False):
     avg_amount_df = pd.merge(avg_amount_credit, avg_amount_withdrawal, on="account_id", how="outer")
     avg_amount_df.fillna(0, inplace=True)
 
-    avg_amount_total = df_copy.groupby(['account_id']).agg({'amount':['mean']}).reset_index()
-    avg_amount_total.columns = ['account_id', 'avg_amount_total']
+    avg_amount_total = df_copy.groupby(['account_id']).agg({'amount':['mean','min', 'max']}).reset_index()
+    avg_amount_total.columns = ['account_id', 'avg_amount_total', 'min_amount', 'max_amount']
     new_df = pd.merge(avg_amount_df, avg_amount_total, on="account_id", how="outer")
     new_df.fillna(0, inplace=True)
 
@@ -379,7 +379,6 @@ def clean(output_name):
     df_test = df_test.set_index('loan_id')
 
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
-
 
 
 if __name__ == "__main__":

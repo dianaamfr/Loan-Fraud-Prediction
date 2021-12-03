@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 from pathlib import Path
 import pickle
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 def test(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-test.csv', delimiter=",", low_memory=False)
@@ -20,7 +20,10 @@ def test(classifier_name, submission_name):
 
     df = df[['loan_id'] + best_attributes]
     x_test = df.set_index('loan_id')
-    x_test = normalize_if_not_tree_based(x_test, classifier_name)
+
+    scaler = MinMaxScaler()
+
+    x_test = normalize_if_not_tree_based(x_test, classifier_name, scaler)
     print(x_test.head())
 
     models_folder = Path("models/")
@@ -45,13 +48,15 @@ def test(classifier_name, submission_name):
 # Normalize
 ###########
 
-def normalize_if_not_tree_based(df, classifier_name):
-    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest' and classifier_name != 'xgboost'):
-        return normalize(df)
+def not_tree_based(classifier_name):
+    return classifier_name not in ['decision_tree','random_forest','xgboost','gradient_boosting']
+
+def normalize_if_not_tree_based(df, classifier_name, scaler):
+    if (not_tree_based(classifier_name)):
+        return normalize(df, scaler)
     return df
 
-def normalize(df):
-    scaler = MinMaxScaler()
+def normalize(df, scaler):
     transformed = scaler.fit_transform(df)
     df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
     return df

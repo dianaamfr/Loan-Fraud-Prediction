@@ -11,40 +11,48 @@ from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, BaggingClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2, f_classif, mutual_info_classif, f_regression, mutual_info_regression
 from mlxtend.feature_selection import SequentialFeatureSelector as SFS
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import pickle
 from pathlib import Path
 from imblearn.over_sampling import SMOTE
 from xgboost import XGBClassifier
+from sklearn import preprocessing
 
 DEBUG = False
 RS = 42
 
+################################################
+# Cross-Validation comparison of the classifiers
+################################################
 
-def train(classifier_name, submission_name):
-    df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
-    df = normalize_if_not_tree_based(df, classifier_name)
+def no_cross_validation(X, y, classifier, kf):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
+    
+    compare_classifiers(kf, X_train, y_train)
 
-    X = df.drop(columns=['loan_status'])
-    y = df['loan_status']
+    classifier.fit(X_train, y_train)
 
-    oversample = SMOTE(random_state=RS)
-    X, y = oversample.fit_resample(X, y)
+    print("Performance on the training set")
+    y_train_pred = classifier.predict(X_test)
+    y_train_proba = classifier.predict_proba(X_train)
+    auc_train = roc_auc_score(y_train, y_train_proba[:, 1])
+    print(f"Train ROC AUC: {auc_train}")
+    #print(y_train_pred)
 
-    X, y = filter_feature_selection(X, y)
+    print("\nPerformance on the test set")
+    y_test_pred = classifier.predict(X_test)
+    y_test_proba = classifier.predict_proba(X_test)
+    auc_test = roc_auc_score(y_test, y_test_proba[:, 1])
+    print(f"Test ROC AUC: {auc_test}")
 
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
-
-    classifier = get_classifier_best(classifier_name)
-    kf=KFold(5, random_state=RS, shuffle=True)
-
+def cross_validation(X, y, classifier, kf):
     auc_train_scores = []
     auc_test_scores = []
  
@@ -66,6 +74,55 @@ def train(classifier_name, submission_name):
     print('AUC Train scores of each fold - {}'.format(auc_train_scores))
     print('AUC Test scores of each fold - {}'.format(auc_test_scores))
 
+def compare_classifiers(kfold, X_train, y_train):
+    decision_tree_classifier = get_classifier_best('decision_tree')
+    logistic_regression_classifier = get_classifier_best('logistic_regression')
+    random_forest_classifier = get_classifier_best('random_forest')
+    gradient_boosting_classifier = get_classifier_best('gradient_boosting')
+    svm_classifier = get_classifier_best('svm')
+    knn_classifier = get_classifier_best('knn')
+    neural_network_classifier = get_classifier_best('neural_network')
+
+    decision_tree_scores = cross_val_score(decision_tree_classifier, X_train, y_train, cv=kfold)
+    logistic_regression_scores = cross_val_score(logistic_regression_classifier, X_train, y_train, cv=kfold)
+    random_forest_scores = cross_val_score(random_forest_classifier, X_train, y_train, cv=kfold)
+    gradient_boosting_scores = cross_val_score(gradient_boosting_classifier, X_train, y_train, cv=kfold)
+    svm_scores = cross_val_score(svm_classifier, X_train, y_train, cv=kfold)
+    knn_scores = cross_val_score(knn_classifier, X_train, y_train, cv=kfold)
+    neural_network_scores = cross_val_score(neural_network_classifier, X_train, y_train, cv=kfold)
+
+    print("DECISION TREE: %0.2f accuracy with a standard deviation of %0.2f" % (decision_tree_scores.mean(), decision_tree_scores.std()))
+    print("LOGISTIC REGRESSION: %0.2f accuracy with a standard deviation of %0.2f" % (logistic_regression_scores.mean(), logistic_regression_scores.std()))
+    print("RANDOM FOREST: %0.2f accuracy with a standard deviation of %0.2f" % (random_forest_scores.mean(), random_forest_scores.std()))
+    print("GRADIENT BOOSTING: %0.2f accuracy with a standard deviation of %0.2f" % (gradient_boosting_scores.mean(), gradient_boosting_scores.std()))
+    print("SVM: %0.2f accuracy with a standard deviation of %0.2f" % (svm_scores.mean(), svm_scores.std()))
+    print("KNN: %0.2f accuracy with a standard deviation of %0.2f" % (knn_scores.mean(), knn_scores.std()))
+    print("NEURAL NETWORK: %0.2f accuracy with a standard deviation of %0.2f" % (neural_network_scores.mean(), neural_network_scores.std()))
+
+
+def train(classifier_name, submission_name):
+    df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
+
+    scaler = MinMaxScaler()
+
+    df = normalize_if_not_tree_based(df, classifier_name, scaler)
+
+    X = df.drop(columns=['loan_status'])
+    y = df['loan_status']
+
+    oversample = SMOTE(random_state=RS)
+    X, y = oversample.fit_resample(X, y)
+
+    X, y = filter_feature_selection(X, y)
+
+    classifier = get_classifier_best(classifier_name)
+
+    kfold = KFold(5, random_state=RS, shuffle=True)
+    
+    cross_validation(X, y, classifier, kfold)
+
+    # no_cross_validation(X, y, classifier, kfold)
+
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
     joblib.dump(classifier, filename)
@@ -81,7 +138,7 @@ def grid_search(classifier_name, submission_name):
     y = df['loan_status']
 
     X, y = filter_feature_selection(X, y)
-    
+
     params = get_grid_params(classifier_name)
     classifier = get_classifier(classifier_name)
     grid_search_var = GridSearchCV(
@@ -249,9 +306,7 @@ def get_grid_params(classifier):
           'nesterovs_momentum':[True, False],
           'early_stopping':[False, True]}
 
-    #elif classifier == 'SelectKBest':
-    #    return {'score_func': [ mutual_info_classif, chi2, f_regression, mutual_info_regression, SelectPercentile, SelectFpr, SelectFdr, SelectFwe, GenericUnivariateSelect, f_classif]}
-
+    
 # TODO - update this according to grid search
 def get_classifier_best(classifier):
     if classifier == 'decision_tree':
@@ -270,20 +325,23 @@ def get_classifier_best(classifier):
     elif classifier == 'neural_network':
         return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs')
     elif classifier == 'xgboost':
-        return XGBClassifier(colsample_bytree= 0.8, gamma= 1.5, max_depth= 3, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='mlogloss')
-        # return MLPClassifier()
+        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 3, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='mlogloss')
+    elif classifier == 'bagging':
+        return BaggingClassifier(bootstrap_features= True, max_features= 1.0, max_samples= 1.0, n_estimators= 20)
 
 ###########
 # Normalize
 ###########
 
-def normalize_if_not_tree_based(df, classifier_name):
-    if (classifier_name != 'decision_tree' and classifier_name != 'random_forest' and classifier_name != 'xgboost'):
-        return normalize(df)
+def not_tree_based(classifier_name):
+    return classifier_name not in ['decision_tree','random_forest','xgboost','gradient_boosting']
+
+def normalize_if_not_tree_based(df, classifier_name, scaler):
+    if (not_tree_based(classifier_name)):
+        return normalize(df,scaler)
     return df
 
-def normalize(df):
-    scaler = MinMaxScaler()
+def normalize(df, scaler):
     transformed = scaler.fit_transform(df)
     df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
     return df
@@ -294,6 +352,4 @@ if __name__ == "__main__":
         grid_search(sys.argv[1], sys.argv[2])
     else:
         train(sys.argv[1], sys.argv[2])
-
-
     
