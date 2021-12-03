@@ -119,7 +119,14 @@ def clean_accounts(db):
 def clean_disp(db):
     # Keep only the owner of the account, because only the owner can ask for a loan
     df = db.df_query("SELECT * FROM disposition WHERE disp_type = 'OWNER'")
-    df.drop(columns=['disp_type'], inplace=True)
+
+    has_disponent = db.df_query("SELECT account_id, COUNT(disp_id) AS n_disponents FROM disposition WHERE disp_type = 'DISPONENT' GROUP BY account_id")
+    df = pd.merge(df, has_disponent, on="account_id", how="left")
+    df.fillna(0, inplace=True)
+
+    df['has_disponent'] = df['n_disponents'] > 0
+    df.drop(columns=['disp_type', 'n_disponents'], inplace=True)
+    df = encode_category(df, 'has_disponent')
 
     return df
 

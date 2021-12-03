@@ -172,11 +172,11 @@ def train(classifier_name, submission_name):
     num_splits = 5
     kf = KFold(num_splits, random_state=RS, shuffle=True)
 
-    compare_classifiers(kf, X, y, X_normalized, y_normalized)
+    #compare_classifiers(kf, X, y, X_normalized, y_normalized)
 
-    # cross_validation(X, y, classifier, kf, num_splits)
+    cross_validation(X, y, classifier, kf, num_splits)
 
-    no_cross_validation(X, y, classifier, kf)
+    #no_cross_validation(X, y, classifier, kf)
 
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
@@ -215,20 +215,20 @@ def grid_search(classifier_name, submission_name):
 # Filter Based Feature Selection
 ################################  
 
-def filter_feature_selection(X, y):
+def filter_feature_selection(X, y, k=15):
     models_folder = Path("models/")
 
-    bestfeatures = SelectKBest(score_func=f_classif, k=15) # f_classif, f_regression
+    bestfeatures = SelectKBest(score_func=f_classif, k=k) # f_classif, f_regression
     fit = bestfeatures.fit(X,y)
     dfscores = pd.DataFrame(fit.scores_)
     dfcolumns = pd.DataFrame(X.columns)
     featureScores = pd.concat([dfcolumns,dfscores],axis=1)
     featureScores.columns = ['Specs','Score']  #naming the dataframe columns
-    print(featureScores.nlargest(15, 'Score'))  #print 10 best features
+    print(featureScores.nlargest(k, 'Score'))  #print 10 best features
 
-    print(featureScores.nlargest(15,'Score')['Specs'].values.tolist())
+    print(featureScores.nlargest(k,'Score')['Specs'].values.tolist())
 
-    best_attributes = featureScores.nlargest(15,'Score')['Specs'].values.tolist()
+    best_attributes = featureScores.nlargest(k,'Score')['Specs'].values.tolist()
 
     pickle.dump(best_attributes, open(models_folder/'attributes.pkl', "wb"))
 
@@ -386,7 +386,7 @@ def get_classifier_best(classifier):
     elif classifier == 'neural_network':
         return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs', max_iter=300)
     elif classifier == 'xgboost':
-        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 3, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='mlogloss')
+        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 30, min_child_weight= 1, subsample= 1.0,)
     elif classifier == 'bagging':
         return BaggingClassifier(bootstrap_features= True, max_features= 1.0, max_samples= 1.0, n_estimators= 20)
 
