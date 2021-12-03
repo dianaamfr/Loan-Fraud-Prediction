@@ -123,6 +123,8 @@ def compare_classifiers(kfold, X, y, X_normalized, y_normalized):
     svm_classifier = get_classifier_best('svm')
     knn_classifier = get_classifier_best('knn')
     neural_network_classifier = get_classifier_best('neural_network')
+    xgboost_classifier = get_classifier_best('xgboost')
+    bagging_classifier = get_classifier_best('bagging')
 
     decision_tree_scores = cross_val_score(decision_tree_classifier, X, y, cv=kfold)
     logistic_regression_scores = cross_val_score(logistic_regression_classifier, X_normalized, y_normalized, cv=kfold)
@@ -131,6 +133,8 @@ def compare_classifiers(kfold, X, y, X_normalized, y_normalized):
     svm_scores = cross_val_score(svm_classifier, X_normalized, y_normalized, cv=kfold)
     knn_scores = cross_val_score(knn_classifier, X_normalized, y_normalized, cv=kfold)
     neural_network_scores = cross_val_score(neural_network_classifier, X_normalized, y_normalized, cv=kfold)
+    xgboost_scores = cross_val_score(xgboost_classifier, X, y, cv=kfold)
+    bagging_scores = cross_val_score(bagging_classifier, X, y, cv=kfold)
 
     print("DECISION TREE: %0.2f accuracy with a standard deviation of %0.2f" % (decision_tree_scores.mean(), decision_tree_scores.std()))
     print("LOGISTIC REGRESSION: %0.2f accuracy with a standard deviation of %0.2f" % (logistic_regression_scores.mean(), logistic_regression_scores.std()))
@@ -139,6 +143,8 @@ def compare_classifiers(kfold, X, y, X_normalized, y_normalized):
     print("SVM: %0.2f accuracy with a standard deviation of %0.2f" % (svm_scores.mean(), svm_scores.std()))
     print("KNN: %0.2f accuracy with a standard deviation of %0.2f" % (knn_scores.mean(), knn_scores.std()))
     print("NEURAL NETWORK: %0.2f accuracy with a standard deviation of %0.2f" % (neural_network_scores.mean(), neural_network_scores.std()))
+    print("XGBOOST: %0.2f accuracy with a standard deviation of %0.2f" % (xgboost_scores.mean(), xgboost_scores.std()))
+    print("BAGGING: %0.2f accuracy with a standard deviation of %0.2f" % (bagging_scores.mean(), bagging_scores.std()))
 
 
 def train(classifier_name, submission_name):
@@ -363,7 +369,6 @@ def get_grid_params(classifier):
         return {'booster': ['gbtree', 'gblinear', 'dart']}
 
     
-# TODO - update this according to grid search
 def get_classifier_best(classifier):
     if classifier == 'decision_tree':
         # return DecisionTreeClassifier(criterion='entropy', splitter='random')
