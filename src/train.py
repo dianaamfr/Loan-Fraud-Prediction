@@ -36,6 +36,8 @@ RS = 42
 ################################################
 
 def no_cross_validation(X, y, classifier, kf):
+    status_values = list(y.unique())
+    status_values = [-1 if x == 1 else 1 for x in status_values]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
     
@@ -44,7 +46,7 @@ def no_cross_validation(X, y, classifier, kf):
     classifier.fit(X_train, y_train)
 
     print("Performance on the training set")
-    y_train_pred = classifier.predict(X_test)
+    y_train_pred = classifier.predict(X_train)
     y_train_proba = classifier.predict_proba(X_train)
     auc_train = roc_auc_score(y_train, y_train_proba[:, 1])
     print(f"Train ROC AUC: {auc_train}")
@@ -56,8 +58,22 @@ def no_cross_validation(X, y, classifier, kf):
     auc_test = roc_auc_score(y_test, y_test_proba[:, 1])
     print(f"Test ROC AUC: {auc_test}")
 
+    conf_matrix = confusion_matrix(y_test, y_test_pred)
+
+    print('Confusion matrix:')
+    print(conf_matrix)
+
+    confusion_matrix_fig = plt.figure(figsize = (15,8))
+    sb.heatmap(conf_matrix, xticklabels=status_values, yticklabels=status_values, annot=True)
+    plt.title('Confusion matrix')
+
+    confusion_matrix_fig.tight_layout()
+    plt.savefig('models/confusion_matrix.jpg')
+    plt.clf()
+
+
 def cross_validation(X, y, classifier, kf, num_splits):
-    status_values = list(y['loan_status'].unique())
+    status_values = list(y.unique())
     status_values = [-1 if x == 1 else 1 for x in status_values]
     
     auc_train_scores = []
@@ -76,12 +92,12 @@ def cross_validation(X, y, classifier, kf, num_splits):
         y_pred = classifier.predict(X_test)
         conf_matrix = confusion_matrix(y_test, y_pred)
 
-        print('Confusion matrix:')
+        print(f'Confusion matrix of split {plot_index-num_splits}:')
         print(conf_matrix)
 
         confusion_matrix_fig.add_subplot(3, num_splits, plot_index)
         sb.heatmap(conf_matrix, xticklabels=status_values, yticklabels=status_values, annot=True)
-        plt.title(f'Split {plot_index}')
+        plt.title(f'Split {plot_index-num_splits}')
 
         plot_index += 1
 
@@ -131,7 +147,6 @@ def train(classifier_name, submission_name):
     df = pd.read_csv('clean_data/' + submission_name + '-train.csv', delimiter=",", low_memory=False)
 
     scaler = MinMaxScaler()
-
     df = normalize_if_not_tree_based(df, classifier_name, scaler)
 
     X = df.drop(columns=['loan_status'])
@@ -147,9 +162,9 @@ def train(classifier_name, submission_name):
     num_splits = 5
     kf = KFold(num_splits, random_state=RS, shuffle=True)
 
-    cross_validation(X, y, classifier, kf, num_splits)
+    # cross_validation(X, y, classifier, kf, num_splits)
 
-    # no_cross_validation(X, y, classifier, kf)
+    no_cross_validation(X, y, classifier, kf)
 
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
@@ -347,7 +362,7 @@ def get_classifier_best(classifier):
     elif classifier == 'gradient_boosting':
         return GradientBoostingClassifier(random_state=RS, criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12)
     elif classifier == 'svm':
-        return SVC(random_state=RS, C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= 3, probability=True)
+        return SVC(random_state=RS, C= 1, class_weight= 'balanced', coef0= 0.0, decision_function_shape= 'ovo', degree= 5, gamma= 'scale', kernel= 'poly', max_iter= 300, probability=True)
     elif classifier == 'knn':
         return KNeighborsClassifier(n_neighbors=5, weights='distance', leaf_size=20, p=1)
     elif classifier == 'neural_network':
@@ -365,13 +380,18 @@ def not_tree_based(classifier_name):
     return classifier_name not in ['decision_tree','random_forest','xgboost','gradient_boosting']
 
 def normalize_if_not_tree_based(df, classifier_name, scaler):
+    print("CLASSIF_NAME: " + classifier_name)
     if (not_tree_based(classifier_name)):
         return normalize(df,scaler)
     return df
 
 def normalize(df, scaler):
     transformed = scaler.fit_transform(df)
+    print("ANTES")
+    print(df)
     df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
+    print("DEPOIS")
+    print(df)
     return df
 
 
