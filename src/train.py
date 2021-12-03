@@ -1,11 +1,14 @@
 import sys
 import joblib
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from scipy.sparse.construct import rand
 from sklearn import metrics
+import seaborn as sb
 from seaborn.axisgrid import Grid
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, confusion_matrix
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
@@ -33,6 +36,7 @@ RS = 42
 ################################################
 
 def no_cross_validation(X, y, classifier, kf):
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=RS)
     
     compare_classifiers(kf, X_train, y_train)
@@ -52,15 +56,34 @@ def no_cross_validation(X, y, classifier, kf):
     auc_test = roc_auc_score(y_test, y_test_proba[:, 1])
     print(f"Test ROC AUC: {auc_test}")
 
-def cross_validation(X, y, classifier, kf):
+def cross_validation(X, y, classifier, kf, num_splits):
+    status_values = list(y['loan_status'].unique())
+    status_values = [-1 if x == 1 else 1 for x in status_values]
+    
     auc_train_scores = []
     auc_test_scores = []
  
+    confusion_matrix_fig = plt.figure(figsize = (15,8))
+
+    plot_index = num_splits + 1
+
     for train_index , test_index in kf.split(X):
         X_train , X_test = X.iloc[train_index,:],X.iloc[test_index,:]
         y_train , y_test = y[train_index] , y[test_index]
         
         classifier.fit(X_train,y_train)
+
+        y_pred = classifier.predict(X_test)
+        conf_matrix = confusion_matrix(y_test, y_pred)
+
+        print('Confusion matrix:')
+        print(conf_matrix)
+
+        confusion_matrix_fig.add_subplot(3, num_splits, plot_index)
+        sb.heatmap(conf_matrix, xticklabels=status_values, yticklabels=status_values, annot=True)
+        plt.title(f'Split {plot_index}')
+
+        plot_index += 1
 
         pred_proba_test = classifier.predict_proba(X_test)[:, 1]
         pred_proba_train = classifier.predict_proba(X_train)[:, 1]
@@ -70,6 +93,10 @@ def cross_validation(X, y, classifier, kf):
 
         auc_test_scores.append(auc_test)
         auc_train_scores.append(auc_train)
+
+    confusion_matrix_fig.tight_layout()
+    plt.savefig('models/confusion_matrix.jpg')
+    plt.clf()
   
     print('AUC Train scores of each fold - {}'.format(auc_train_scores))
     print('AUC Test scores of each fold - {}'.format(auc_test_scores))
@@ -116,12 +143,13 @@ def train(classifier_name, submission_name):
     X, y = filter_feature_selection(X, y)
 
     classifier = get_classifier_best(classifier_name)
-
-    kfold = KFold(5, random_state=RS, shuffle=True)
     
-    cross_validation(X, y, classifier, kfold)
+    num_splits = 5
+    kf = KFold(num_splits, random_state=RS, shuffle=True)
 
-    # no_cross_validation(X, y, classifier, kfold)
+    cross_validation(X, y, classifier, kf, num_splits)
+
+    # no_cross_validation(X, y, classifier, kf)
 
     models_folder = Path("models/")
     filename = models_folder/(classifier_name + '-' + submission_name + '.sav')
