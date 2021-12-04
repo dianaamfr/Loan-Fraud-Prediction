@@ -9,12 +9,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 
 RS = 42
+BASE_ESTIMATOR = 'random_forest'
+TREE_BASED_CLASSIFIERS = ['decision_tree','random_forest','xgboost','gradient_boosting']
 
 ###############
 # Normalization
 ###############
-
-TREE_BASED_CLASSIFIERS = ['decision_tree','random_forest','xgboost','gradient_boosting']
 
 def normalize_if_not_tree_based(df, classifier_name, scaler):
     if not_tree_based(classifier_name):
@@ -22,7 +22,10 @@ def normalize_if_not_tree_based(df, classifier_name, scaler):
     return df
 
 def not_tree_based(classifier_name):
-    return classifier_name not in TREE_BASED_CLASSIFIERS
+    if classifier_name == 'bagging':
+        return BASE_ESTIMATOR not in TREE_BASED_CLASSIFIERS
+    else:
+        return classifier_name not in TREE_BASED_CLASSIFIERS
 
 def normalize(df, scaler):
     transformed = scaler.fit_transform(df)
@@ -50,6 +53,8 @@ def get_classifier(classifier):
         return MLPClassifier(random_state=RS) # TODO: random_state
     elif classifier == 'xgboost':
         return XGBClassifier()
+    elif classifier == 'bagging':
+        return BaggingClassifier(get_classifier(BASE_ESTIMATOR))
 
 def get_grid_params(classifier):
     if classifier == 'decision_tree':
@@ -139,7 +144,7 @@ def get_classifier_best(classifier):
     elif classifier == 'neural_network':
         return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs', max_iter=300)
     elif classifier == 'xgboost':
-        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 30, min_child_weight= 1, subsample= 1.0,)
+        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 30, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='mlogloss')
     elif classifier == 'bagging':
-        return BaggingClassifier(bootstrap_features= True, max_features= 1.0, max_samples= 1.0, n_estimators= 20)
+        return BaggingClassifier(get_classifier_best(BASE_ESTIMATOR), random_state=RS, n_jobs=-1)
 
