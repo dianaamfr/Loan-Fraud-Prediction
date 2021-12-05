@@ -199,14 +199,23 @@ def clean_transactions(db, test=False):
 
     df = df.replace(r'^\s*$', np.NaN, regex=True)
 
-    # Drop columns with more than x% of NaN values
-    df.drop(columns=['bank', 'k_symbol'], inplace=True)
-    # TODO - extract features from k_symbol instead of dropping it
+    # Drop bank column - more than 50% NaN values
+    df.drop(columns=['bank'], inplace=True)
 
-    # TODO - extract features from operation instead of dropping it
+    # Operation Nan and rename
     df["operation"].fillna("interest credited", inplace=True)
-    df.drop(columns=['operation'], inplace=True)
 
+    # Rename
+    # credit in cash = CashC, collection from anotther bank = Coll, interest credited = Interest, withdrawal in cash = CashW,remittance to another bank = Rem,credit card withdrawal=CardW
+    df.loc[df["operation"]=="credit in cash", "operation"] = "CashC"
+    df.loc[df["operation"]=="collection from anot", "operation"] = "Coll"
+    df.loc[df["operation"]=="interest credited", "operation"] = "Interest"
+    df.loc[df["operation"]=="withdrawal in cash", "operation"] = "CashW"
+    df.loc[df["operation"]=="remittance to anothe", "operation"] = "Rem"
+    df.loc[df["operation"]=="credit card withdraw", "operation"] = "CardW"
+
+    # TODO - process k_symbol
+    df.drop(columns=['k_symbol'], inplace=True)
 
     # TYPE & AMOUNT
     # Rename withdrawal in cash - wrong label
@@ -277,6 +286,54 @@ def clean_transactions(db, test=False):
 
     new_df = pd.merge(new_df, balance_count_df, on="account_id", how="outer")
     new_df = pd.merge(new_df, last_balance_df, on="account_id", how="outer")
+
+    ###########
+    # Operation
+    ###########
+    operation_amount = df_copy.groupby(['account_id', 'operation']).agg({'amount': ['mean', 'max', 'min', 'count']}).reset_index()
+    operation_amount.columns = ['account_id', 'operation', 'operation_amount_mean', 'operation_amount_max', 'operation_amount_min', 'operation_amount_count']
+    
+    # credit in cash = CashC
+    cashC_operation = operation_amount[operation_amount['operation'] == 'CashC']
+    cashC_operation.columns = ['account_id', 'operation', 'mean_cash_credit', 'max_cash_credit', 'min_cash_credit', 'num_cash_credit']
+    cashC_operation = cashC_operation.drop(['operation'], axis=1)
+
+    # collection from anotther bank = Coll
+    coll_operation = operation_amount[operation_amount['operation'] == 'Coll']
+    coll_operation.columns = ['account_id', 'operation', 'mean_coll', 'max_coll', 'min_coll', 'num_coll']
+    coll_operation = coll_operation.drop(['operation'], axis=1)
+
+    # interest credited = Interest,
+    interest_operation = operation_amount[operation_amount['operation'] == 'Interest']
+    interest_operation.columns = ['account_id', 'operation', 'mean_interest', 'max_interest', 'min_interest', 'num_interest']
+    interest_operation = interest_operation.drop(['operation'], axis=1)
+
+    # withdrawal in cash = CashW
+    cashW_operation = operation_amount[operation_amount['operation'] == 'CashW']
+    cashW_operation.columns = ['account_id', 'operation', 'mean_cash_withdrawal', 'max_cash_withdrawal', 'min_cash_withdrawal', 'num_cash_withdrawal']
+    cashW_operation = cashW_operation.drop(['operation'], axis=1)
+
+    # remittance to another bank = Rem
+    rem_operation = operation_amount[operation_amount['operation'] == 'Rem']
+    rem_operation.columns = ['account_id', 'operation', 'mean_rem', 'max_rem', 'min_rem', 'num_rem']
+    rem_operation = rem_operation.drop(['operation'], axis=1)
+
+    # credit card withdrawal = CardW
+    cardW_operation = operation_amount[operation_amount['operation'] == 'CardW']
+    cardW_operation.columns = ['account_id', 'operation', 'mean_card_withdrawal', 'max_card_withdrawal', 'min_card_withdrawal', 'num_card_withdrawal']
+    cardW_operation = cardW_operation.drop(['operation'], axis=1)
+    
+    operation_amount_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
+    operation_amount_df = operation_amount_df.merge(interest_operation, on='account_id',how='outer')
+    operation_amount_df = operation_amount_df.merge(cashW_operation, on='account_id',how='outer')
+    operation_amount_df = operation_amount_df.merge(rem_operation, on='account_id',how='outer')
+    operation_amount_df = operation_amount_df.merge(cardW_operation, on='account_id',how='outer')
+    operation_amount_df.fillna(0, inplace=True)
+    
+    new_df = pd.merge(new_df, operation_amount_df, on="account_id", how="outer")
+
+    # K-Symbol
+    #[nan 'interest credited' 'insurrance payment' 'household' 'payment for statemen' 'sanction interest if']
 
     return new_df
 
@@ -371,7 +428,7 @@ def clean(output_name):
     df_train = df_train.set_index('loan_id')
 
     transform_status(df_train)
-
+    print(len(df_train.columns))
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
     ############
