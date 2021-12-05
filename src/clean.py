@@ -268,16 +268,17 @@ def clean_transactions(db, test=False):
     trans_type_count_df = pd.merge(credit_counts, withdrawal_counts, on="account_id", how="outer")
     trans_type_count_df.fillna(0, inplace=True)
     trans_type_count_df['credit_ratio'] = trans_type_count_df['num_credits'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
-    trans_type_count_df['withdrawal_ratio'] = trans_type_count_df['num_withdrawals'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
+    #trans_type_count_df['withdrawal_ratio'] = trans_type_count_df['num_withdrawals'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
 
     trans_type_count_df.drop(columns=['num_credits', 'num_withdrawals'], inplace=True)
     new_df = pd.merge(new_df, trans_type_count_df, on="account_id", how="outer")
 
     # Average, Min, Max Balance & Num Transactions
     balance_count_df = db.df_query('SELECT account_id, AVG(balance) AS avg_balance, COUNT(trans_id) AS num_trans, '\
-            ' MAX(balance) AS max_balance, MIN(balance) AS min_balance '\
+            ' MIN(balance) AS min_balance, STDDEV(balance) AS std_balance '\
             'FROM ' + table + ' GROUP BY account_id')
     balance_count_df['negative_balance'] = balance_count_df['min_balance'] < 0
+    #balance_count_df.drop(columns=['min_balance'], inplace=True)
     balance_count_df = encode_category(balance_count_df, 'negative_balance')
 
     # Last Transaction
@@ -293,37 +294,37 @@ def clean_transactions(db, test=False):
     ###########
     # Operation
     ###########
-    operation_amount = df_copy.groupby(['account_id', 'operation']).agg({'amount': ['mean', 'max', 'min', 'count']}).reset_index()
-    operation_amount.columns = ['account_id', 'operation', 'operation_amount_mean', 'operation_amount_max', 'operation_amount_min', 'operation_amount_count']
+    operation_amount = df_copy.groupby(['account_id', 'operation']).agg({'amount': ['mean', 'count']}).reset_index()
+    operation_amount.columns = ['account_id', 'operation', 'operation_amount_mean', 'operation_amount_count']
     
     # credit in cash = CashC
     cashC_operation = operation_amount[operation_amount['operation'] == 'CashC']
-    cashC_operation.columns = ['account_id', 'operation', 'mean_cash_credit', 'max_cash_credit', 'min_cash_credit', 'num_cash_credit']
+    cashC_operation.columns = ['account_id', 'operation', 'mean_cash_credit', 'num_cash_credit']
     cashC_operation = cashC_operation.drop(['operation'], axis=1)
 
-    # collection from anotther bank = Coll
+    # collection from another bank = Coll
     coll_operation = operation_amount[operation_amount['operation'] == 'Coll']
-    coll_operation.columns = ['account_id', 'operation', 'mean_coll', 'max_coll', 'min_coll', 'num_coll']
+    coll_operation.columns = ['account_id', 'operation', 'mean_coll', 'num_coll']
     coll_operation = coll_operation.drop(['operation'], axis=1)
 
     # interest credited = Interest,
     interest_operation = operation_amount[operation_amount['operation'] == 'Interest']
-    interest_operation.columns = ['account_id', 'operation', 'mean_interest', 'max_interest', 'min_interest', 'num_interest']
+    interest_operation.columns = ['account_id', 'operation', 'mean_interest', 'num_interest']
     interest_operation = interest_operation.drop(['operation'], axis=1)
 
     # withdrawal in cash = CashW
     cashW_operation = operation_amount[operation_amount['operation'] == 'CashW']
-    cashW_operation.columns = ['account_id', 'operation', 'mean_cash_withdrawal', 'max_cash_withdrawal', 'min_cash_withdrawal', 'num_cash_withdrawal']
+    cashW_operation.columns = ['account_id', 'operation', 'mean_cash_withdrawal', 'num_cash_withdrawal']
     cashW_operation = cashW_operation.drop(['operation'], axis=1)
 
     # remittance to another bank = Rem
     rem_operation = operation_amount[operation_amount['operation'] == 'Rem']
-    rem_operation.columns = ['account_id', 'operation', 'mean_rem', 'max_rem', 'min_rem', 'num_rem']
+    rem_operation.columns = ['account_id', 'operation', 'mean_rem', 'num_rem']
     rem_operation = rem_operation.drop(['operation'], axis=1)
 
     # credit card withdrawal = CardW
     cardW_operation = operation_amount[operation_amount['operation'] == 'CardW']
-    cardW_operation.columns = ['account_id', 'operation', 'mean_card_withdrawal', 'max_card_withdrawal', 'min_card_withdrawal', 'num_card_withdrawal']
+    cardW_operation.columns = ['account_id', 'operation', 'mean_card_withdrawal', 'num_card_withdrawal']
     cardW_operation = cardW_operation.drop(['operation'], axis=1)
     
     operation_amount_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
@@ -342,10 +343,6 @@ def clean_transactions(db, test=False):
     no_symbol = symbol_amount[symbol_amount['k_symbol'] == 'None']
     no_symbol.columns = ['account_id', 'k_symbol', 'mean_no_symbol', 'num_no_symbol']
     no_symbol = no_symbol.drop(['k_symbol'], axis=1)
-
-    interest_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Interest']
-    interest_symbol.columns = ['account_id', 'k_symbol', 'mean_interest', 'num_interest']
-    interest_symbol = interest_symbol.drop(['k_symbol'], axis=1)
 
     household_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Household']
     household_symbol.columns = ['account_id', 'k_symbol', 'mean_household', 'num_household']
@@ -367,8 +364,7 @@ def clean_transactions(db, test=False):
     pension_symbol.columns = ['account_id', 'k_symbol', 'mean_pension', 'num_pension']
     pension_symbol = pension_symbol.drop(['k_symbol'], axis=1)
 
-    symbol_amount_df = no_symbol.merge(interest_symbol, on='account_id',how='outer')
-    symbol_amount_df = symbol_amount_df.merge(household_symbol, on='account_id',how='outer')
+    symbol_amount_df = no_symbol.merge(household_symbol, on='account_id',how='outer')
     symbol_amount_df = symbol_amount_df.merge(statement_symbol, on='account_id',how='outer')
     symbol_amount_df = symbol_amount_df.merge(insurance_symbol, on='account_id',how='outer')
     symbol_amount_df = symbol_amount_df.merge(sanction_symbol, on='account_id',how='outer')
