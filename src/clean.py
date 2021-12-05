@@ -204,9 +204,6 @@ def clean_transactions(db, test=False):
 
     # Operation Nan and rename
     df["operation"].fillna("interest credited", inplace=True)
-
-    # Rename
-    # credit in cash = CashC, collection from anotther bank = Coll, interest credited = Interest, withdrawal in cash = CashW,remittance to another bank = Rem,credit card withdrawal=CardW
     df.loc[df["operation"]=="credit in cash", "operation"] = "CashC"
     df.loc[df["operation"]=="collection from anot", "operation"] = "Coll"
     df.loc[df["operation"]=="interest credited", "operation"] = "Interest"
@@ -214,8 +211,14 @@ def clean_transactions(db, test=False):
     df.loc[df["operation"]=="remittance to anothe", "operation"] = "Rem"
     df.loc[df["operation"]=="credit card withdraw", "operation"] = "CardW"
 
-    # TODO - process k_symbol
-    df.drop(columns=['k_symbol'], inplace=True)
+    # K_symbol Nan and rename
+    df["k_symbol"].fillna("None", inplace=True)
+    df.loc[df["k_symbol"]=="insurrance payment", "k_symbol"] = "Insurance"
+    df.loc[df["k_symbol"]=="interest credited", "k_symbol"] = "Interest"
+    df.loc[df["k_symbol"]=="household", "k_symbol"] = "Household"
+    df.loc[df["k_symbol"]=="payment for statemen", "k_symbol"] = "Statement"
+    df.loc[df["k_symbol"]=="sanction interest if", "k_symbol"] = "Sanction"
+    df.loc[df["k_symbol"]=="old-age pension", "k_symbol"] = "Pension"
 
     # TYPE & AMOUNT
     # Rename withdrawal in cash - wrong label
@@ -333,7 +336,46 @@ def clean_transactions(db, test=False):
     new_df = pd.merge(new_df, operation_amount_df, on="account_id", how="outer")
 
     # K-Symbol
-    #[nan 'interest credited' 'insurrance payment' 'household' 'payment for statemen' 'sanction interest if']
+    symbol_amount = df_copy.groupby(['account_id', 'k_symbol']).agg({'amount': ['mean', 'count']}).reset_index()
+    symbol_amount.columns = ['account_id', 'k_symbol', 'symbol_amount_mean', 'symbol_amount_count']
+
+    no_symbol = symbol_amount[symbol_amount['k_symbol'] == 'None']
+    no_symbol.columns = ['account_id', 'k_symbol', 'mean_no_symbol', 'num_no_symbol']
+    no_symbol = no_symbol.drop(['k_symbol'], axis=1)
+
+    interest_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Interest']
+    interest_symbol.columns = ['account_id', 'k_symbol', 'mean_interest', 'num_interest']
+    interest_symbol = interest_symbol.drop(['k_symbol'], axis=1)
+
+    household_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Household']
+    household_symbol.columns = ['account_id', 'k_symbol', 'mean_household', 'num_household']
+    household_symbol = household_symbol.drop(['k_symbol'], axis=1)
+    
+    statement_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Statement']
+    statement_symbol.columns = ['account_id', 'k_symbol', 'mean_statement', 'num_statement']
+    statement_symbol = statement_symbol.drop(['k_symbol'], axis=1)
+
+    insurance_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Insurance']
+    insurance_symbol.columns = ['account_id', 'k_symbol', 'mean_insurance', 'num_insurance']
+    insurance_symbol = insurance_symbol.drop(['k_symbol'], axis=1)
+
+    sanction_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Sanction']
+    sanction_symbol.columns = ['account_id', 'k_symbol', 'mean_sanction', 'num_sanction']
+    sanction_symbol = sanction_symbol.drop(['k_symbol'], axis=1)
+
+    pension_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Pension']
+    pension_symbol.columns = ['account_id', 'k_symbol', 'mean_pension', 'num_pension']
+    pension_symbol = pension_symbol.drop(['k_symbol'], axis=1)
+
+    symbol_amount_df = no_symbol.merge(interest_symbol, on='account_id',how='outer')
+    symbol_amount_df = symbol_amount_df.merge(household_symbol, on='account_id',how='outer')
+    symbol_amount_df = symbol_amount_df.merge(statement_symbol, on='account_id',how='outer')
+    symbol_amount_df = symbol_amount_df.merge(insurance_symbol, on='account_id',how='outer')
+    symbol_amount_df = symbol_amount_df.merge(sanction_symbol, on='account_id',how='outer')
+    symbol_amount_df = symbol_amount_df.merge(pension_symbol, on='account_id',how='outer')
+    symbol_amount_df.fillna(0, inplace=True)
+
+    new_df = pd.merge(new_df, symbol_amount_df, on="account_id", how="outer")
 
     return new_df
 
