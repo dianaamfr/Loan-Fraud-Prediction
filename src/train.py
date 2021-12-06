@@ -54,7 +54,7 @@ def train(classifier_name, submission_name):
     classifier = get_classifier_best(classifier_name)
     
     # Fit Classifier and Predict
-    num_splits = 5
+    num_splits = 3
     kf = KFold(num_splits, random_state=RS, shuffle=True)
 
     if CROSS_VALIDATION:

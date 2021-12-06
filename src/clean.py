@@ -436,12 +436,12 @@ def extract_features(df):
 # Submission 1 - only loan
 def first_submission(output_name):
 
-    loan_train = db.df_query('SELECT granted_date, amount, duration, payments, loan_status FROM loan_train')
+    loan_train = db.df_query('SELECT granted_date, amount, payments, loan_status FROM loan_train')
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
     #transform_status(loan_train)
     loan_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
-    loan_test = db.df_query('SELECT loan_id, granted_date, amount, duration, payments FROM loan_test')
+    loan_test = db.df_query('SELECT loan_id, granted_date, amount, payments FROM loan_test')
     loan_test.to_csv('clean_data/' + output_name + '-test.csv', index=False)
 
 

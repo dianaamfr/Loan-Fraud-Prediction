@@ -7,7 +7,7 @@ from sklearn.feature_selection import chi2, f_classif, mutual_info_classif
 from sklearn import preprocessing
 from utils import *
 
-K_FEATURES = 35
+K_FEATURES = 15
 MODELS_FOLDER = Path("models/")
 
 ##############
