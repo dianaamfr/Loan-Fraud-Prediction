@@ -3,9 +3,9 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import *
-from pathlib import Path
 import sys
 from matplotlib.ticker import PercentFormatter
+from datetime import datetime
 
 sys.path.insert(1, '.')
 from database import database
@@ -19,6 +19,8 @@ def loan_train_du():
     loan_amount_status(df.copy())
     loan_duration_status(df.copy())
     loan_payments_status(df.copy())
+    client_age_on_loan()
+    client_gender_status()
 
 def loan_train_distribution(df):  
     sns.histplot(df['granted_date'])
@@ -56,7 +58,6 @@ def loan_train_distribution(df):
     sns.countplot(x ='loan_status', data = df)
     plt.savefig(get_distribution_folder('loan')/'loan_train_status.jpg')
     plt.clf()
-
 
 def loan_test_du():
     df = db.df_query('SELECT * FROM loan_test')
@@ -207,10 +208,71 @@ def loan_payments_status(df):
     plt.savefig(get_distribution_folder('loan')/'loan_train_payments_status.jpg')
     plt.clf()
 
+def client_age_on_loan():
+    df_loan = db.df_query('SELECT * FROM loan_train')
+    df_account = db.df_query('SELECT * FROM account')
+    df_disp = db.df_query('SELECT * FROM disposition WHERE disp_type = "OWNER"')
+    df_client = db.df_query('SELECT * FROM client')
+
+    
+    # relacionar disp with account and client
+    merged_df = pd.merge(df_disp, df_client, how="inner",on="client_id")
+    merged_df = pd.merge(merged_df, df_account, how="inner",on="account_id")
+    merged_df = pd.merge(merged_df, df_loan, how="inner",on="account_id")
+
+    for index, row in merged_df.iterrows(): 
+        #birthDate
+        birth_str = str(merged_df['birth_number'][index])
+        if int(birth_str[2:4]) < 50:
+           merged_df['birth_number'][index] =datetime(int("19"+birth_str[0:2]),int(birth_str[2:4]),int(birth_str[4:6]))
+        else: 
+            merged_df["birth_number"][index] = datetime(int("19"+birth_str[0:2]), int(birth_str[2:4]) - 50, int(birth_str[4:6]))
+        #loan_date
+        merged_df["granted_date"][index] = datetime(int("19"+str(merged_df["granted_date"][index])[0:2]),int(str(merged_df["granted_date"][index])[2:4]),int(str(merged_df["granted_date"][index])[4:6]))
+
+    merged_df['owner_age_on_loan'] = (merged_df['granted_date'] - merged_df['birth_number']).dt.days / 365
+    
+
+    sns.kdeplot( merged_df['owner_age_on_loan'], shade=True)
+    plt.savefig(get_correlation_folder('loan')/'owner_age_on_loan.jpg')
+    plt.clf()
+
+
+def split_birth(birth_number):
+    birth_str = str(birth_number)
+
+    # Male
+    if int(birth_str[2:4]) < 50:
+        return 'M', int('19' + birth_str)
+
+    # Female
+    year = '19' + birth_str[0:2]
+    month = str(int(birth_str[2:4]) - 50).zfill(2)
+    day = birth_str[4:]
+    return 'F', int(year + month + day)
+
+def client_gender_status():
+    df_loan = db.df_query('SELECT * FROM loan_train')
+    df_account = db.df_query('SELECT * FROM account')
+    df_disp = db.df_query('SELECT * FROM disposition')
+    df_client = db.df_query('SELECT * FROM client')
+
+    # relacionar disp with account and client
+    merged_df = pd.merge(df_disp, df_client, how="inner",on="client_id")
+    merged_df = pd.merge(merged_df, df_account, how="inner",on="account_id")
+    merged_df = pd.merge(merged_df, df_loan, how="inner",on="account_id")
+
+    merged_df['gender'], merged_df['birth_date'] = zip(*merged_df['birth_number'].map(split_birth))
+
+    sns.countplot(x='gender', data=merged_df,  hue="loan_status")
+    plt.savefig(get_correlation_folder('loan')/'client_gender_on_loan.jpg')
+    plt.clf()
+
 if __name__ == '__main__':
     create_plots_folders('loan')
     print("### LOAN TRAIN ###")
     loan_train_du()
     print()
-    print("### LOAN TEST ###")
-    loan_test_du()
+    # print("### LOAN TEST ###")
+    # loan_test_du()
+    

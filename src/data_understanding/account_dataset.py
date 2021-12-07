@@ -8,9 +8,7 @@ import sys
 from matplotlib.ticker import PercentFormatter
 
 sys.path.insert(1, '.')
-
 from database import database
-
 db = database.Database('bank_database')
 
 def account_du():
@@ -20,18 +18,17 @@ def account_du():
     
 def account_distribution(df):
     # Account Dataset
-    print()
     sns.countplot(x ='frequency', data = df)
-    plt.savefig('data_understanding/plots/distribution/account/frequency.jpg')
+    plt.savefig(get_distribution_folder('account')/'frequency.jpg')
     plt.clf()
 
     sns.histplot(df['creation_date'])
-    plt.savefig('data_understanding/plots/distribution/account/date.jpg')
+    plt.savefig(get_distribution_folder('account')/'date.jpg')
     plt.clf()
 
     df['creation_date'] = np.log(df['creation_date']) # log transformation
     sns.histplot(df['creation_date'])
-    plt.savefig('data_understanding/plots/distribution/account/date_log.jpg')
+    plt.savefig(get_distribution_folder('account')/'date_log.jpg')
     plt.clf()
 
 def district_id_status():
@@ -187,9 +184,8 @@ def date_account_creation():
     plt.clf()
 
 if __name__ == '__main__':
-    Path("data_understanding/plots/distribution/account").mkdir(parents=True, exist_ok=True)
+    create_plots_folders('account')
     print("### ACCOUNT ###")
-    create_plots_folders('account') # TODO: move to exploration.py file
     account_du()
     district_id_status()
     frequency_status()

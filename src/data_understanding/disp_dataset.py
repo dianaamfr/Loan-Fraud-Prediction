@@ -1,22 +1,24 @@
-import pandas as pd
-import numpy as np
+import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import *
-from pathlib import Path
+
+sys.path.insert(1, '.')
+from database import database
+db = database.Database('bank_database')
 
 def disp_du():
-    df = pd.read_csv(get_files_folder()/'disp.csv', delimiter=";", low_memory=False)
+    df = db.df_query('SELECT * FROM disposition')
     stats(df)
     disp_distribution(df)
 
 def disp_distribution(df):
-    # Disposition Dataset
-    print()
-    sns.countplot(x ='type', data = df)
-    plt.savefig('plots/distribution/disp/type.jpg')
+    sns.countplot(x ='disp_type', data = df)
+    plt.title('Disposition Type')
+    plt.xlabel('type')
+    plt.savefig(get_distribution_folder('disp')/'type.jpg')
     plt.clf()
 
 if __name__ == '__main__':
-    Path("plots/distribution/disp").mkdir(parents=True, exist_ok=True)
+    create_plots_folders('disp')
     disp_du()

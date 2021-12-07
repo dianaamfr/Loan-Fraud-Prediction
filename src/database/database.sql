@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS account;
 DROP TABLE IF EXISTS card_train;
 DROP TABLE IF EXISTS card_test;
 DROP TABLE IF EXISTS client;
-DROP TABLE IF EXISTS disp;
+DROP TABLE IF EXISTS disposition;
 DROP TABLE IF EXISTS district;
 DROP TABLE IF EXISTS loan_train;
 DROP TABLE IF EXISTS loan_test;
@@ -29,7 +29,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE account
 FIELDS TERMINATED BY ';' 
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (account_id, district_id, frequency, creation_date);
 
@@ -47,7 +47,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE card_train
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (card_id, disp_id, card_type, issued);
 
@@ -65,7 +65,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE card_test
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (card_id, disp_id, card_type, issued);
 
@@ -73,8 +73,8 @@ IGNORE 1 ROWS
 
 CREATE TABLE IF NOT EXISTS client (
     client_id INT NOT NULL,
-    birth_number DECIMAL NOT NULL,
-    district_id DECIMAL NOT NULL
+    birth_number INT NOT NULL,
+    district_id INT NOT NULL
 );
 
 LOAD DATA LOCAL INFILE  
@@ -82,16 +82,16 @@ LOAD DATA LOCAL INFILE
 INTO TABLE client
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (client_id, birth_number, district_id);
 
 -- Create and Load Disposition Table
 
 CREATE TABLE IF NOT EXISTS disposition (
-    disp_id DECIMAL NOT NULL,
+    disp_id INT NOT NULL,
     client_id INT NOT NULL,
-    account_id DECIMAL NOT NULL,
+    account_id INT NOT NULL,
     disp_type VARCHAR(20) NOT NULL
 );
 
@@ -100,7 +100,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE disposition
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (disp_id, client_id, account_id, disp_type);
 
@@ -130,7 +130,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE district
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (district_id, district_name, region, nr_inhabitants, nr_municip_inhabitants_499,
 nr_municip_inhabitants_500_1999, nr_municip_inhabitants_2000_9999, nr_municip_inhabitants_10000,
@@ -154,7 +154,7 @@ LOAD DATA LOCAL INFILE
 INTO TABLE loan_train
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (loan_id, account_id, granted_date, amount, duration, payments, loan_status);
 
@@ -175,23 +175,23 @@ LOAD DATA LOCAL INFILE
 INTO TABLE loan_test
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (loan_id, account_id, granted_date, amount, duration, payments, loan_status);
 
 -- Create and Load Transaction Train Table
 
 CREATE TABLE IF NOT EXISTS trans_train (
-    trans_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    trans_date DECIMAL NOT NULL,
-    trans_type VARCHAR(20) NOT NULL,
+    trans_id INT,
+    account_id INT,
+    trans_date INT,
+    trans_type VARCHAR(20),
     operation VARCHAR(20),
-    amount DECIMAL NOT NULL,
-    balance DECIMAL NOT NULL,
+    amount FLOAT,
+    balance FLOAT,
     k_symbol VARCHAR(20),
     bank VARCHAR(20),
-    account DECIMAL
+    account INT
 );
 
 LOAD DATA LOCAL INFILE  
@@ -199,23 +199,23 @@ LOAD DATA LOCAL INFILE
 INTO TABLE trans_train
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (trans_id, account_id, trans_date, trans_type, operation, amount, balance, k_symbol, bank, account);
 
 -- Create and Load Transaction Test Table
 
 CREATE TABLE trans_test (
-    trans_id DECIMAL NOT NULL,
-    account_id DECIMAL NOT NULL,
-    trans_date DECIMAL NOT NULL,
+    trans_id INT NOT NULL,
+    account_id INT NOT NULL,
+    trans_date INT NOT NULL,
     trans_type VARCHAR(20) NOT NULL,
     operation VARCHAR(20),
-    amount DECIMAL NOT NULL,
-    balance DECIMAL NOT NULL,
+    amount INT NOT NULL,
+    balance INT NOT NULL,
     k_symbol VARCHAR(20),
     bank VARCHAR(20),
-    account DECIMAL
+    account INT
 );
 
 LOAD DATA LOCAL INFILE  
@@ -223,6 +223,6 @@ LOAD DATA LOCAL INFILE
 INTO TABLE trans_test
 FIELDS TERMINATED BY ';'
 ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
+LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS
 (trans_id, account_id, trans_date, trans_type, operation, amount, balance, k_symbol, bank, account);
