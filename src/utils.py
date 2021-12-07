@@ -28,9 +28,10 @@ def not_tree_based(classifier_name):
         return classifier_name not in TREE_BASED_CLASSIFIERS
 
 def normalize(df, scaler):
-    transformed = scaler.fit_transform(df)
-    df = pd.DataFrame(transformed, index=df.index, columns=df.columns)
-    return df
+    df_copy = df.copy()
+    transformed = scaler.fit_transform(df_copy)
+    df_normalized = pd.DataFrame(transformed, index=df_copy.index, columns=df_copy.columns)
+    return df_normalized
 
 #############
 # Classifiers
@@ -50,9 +51,9 @@ def get_classifier(classifier):
     elif classifier == 'knn':
         return KNeighborsClassifier(random_state=RS)
     elif classifier == 'neural_network':
-        return MLPClassifier(random_state=RS) # TODO: random_state
+        return MLPClassifier(random_state=RS)
     elif classifier == 'xgboost':
-        return XGBClassifier()
+        return XGBClassifier(use_label_encoder=False, eval_metric='rmse')
     elif classifier == 'bagging':
         return BaggingClassifier(get_classifier(BASE_ESTIMATOR))
 
@@ -144,7 +145,7 @@ def get_classifier_best(classifier):
     elif classifier == 'neural_network':
         return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs', max_iter=300)
     elif classifier == 'xgboost':
-        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 30, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='mlogloss')
+        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 30, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='rmse')
     elif classifier == 'bagging':
         return BaggingClassifier(get_classifier_best(BASE_ESTIMATOR), random_state=RS, n_jobs=-1)
 
