@@ -345,7 +345,7 @@ def clean_transactions(db, test=False):
     operation_amount_df = operation_amount_df.merge(cardW_operation, on='account_id',how='outer')
     operation_amount_df.fillna(0, inplace=True)
     
-    new_df = pd.merge(new_df, operation_amount_df, on="account_id", how="outer")
+    # new_df = pd.merge(new_df, operation_amount_df, on="account_id", how="outer")
 
     # K-Symbol
     symbol_amount = df_copy.groupby(['account_id', 'k_symbol']).agg({'amount': ['mean', 'count']}).reset_index()
@@ -382,7 +382,7 @@ def clean_transactions(db, test=False):
     symbol_amount_df = symbol_amount_df.merge(pension_symbol, on='account_id',how='outer')
     symbol_amount_df.fillna(0, inplace=True)
 
-    new_df = pd.merge(new_df, symbol_amount_df, on="account_id", how="outer")
+    # new_df = pd.merge(new_df, symbol_amount_df, on="account_id", how="outer")
 
     return new_df
 
@@ -578,5 +578,5 @@ def clustering_kmeans():
     plt.show()
 
 if __name__ == "__main__":
-    #clean(sys.argv[1])
-    clustering_kmeans()
+    clean(sys.argv[1])
+    # clustering_kmeans()
