@@ -1,11 +1,15 @@
 import pandas as pd
 import numpy as np
+from pandas.io.formats.format import DataFrameFormatter
 from sklearn import preprocessing
-import datetime
-from datetime import date
+from datetime import datetime, date
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
+import scipy.cluster.hierarchy as sch
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(1, '.')
 from database import database
@@ -73,7 +77,12 @@ def split_birth(birth_number):
 
     return gender, birth_date
 
-def calculate_age(birth_date, loan_date):
+def calculate_age(birth_date):
+    today = datetime.now()
+    age = (today - birth_date).days // 365
+    return age
+
+def calculate_age_loan(birth_date, loan_date):
     frame = { 'birth': birth_date, 'granted': loan_date }
     dates = pd.DataFrame(frame)
 
@@ -81,8 +90,11 @@ def calculate_age(birth_date, loan_date):
     dates['granted'] = pd.to_datetime(dates['granted'], format='%Y-%m-%d')
     dates['difference'] = (dates['granted'] - dates['birth']).dt.days // 365
 
-    return dates['difference'] 
+    return dates['difference']
 
+def calculate_num_trans(account_id):
+    df = db.df_query(f'SELECT COUNT(trans_id) AS num_trans FROM account JOIN trans_train USING(account_id) WHERE account_id={account_id} GROUP BY account_id')
+    return df['num_trans'][0]
 
 def transform_status(df):
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
@@ -135,8 +147,7 @@ def clean_clients(db):
 
     # Gender and Date of birth
     df['gender'], df['birth_date'] = zip(*df['birth_number'].map(split_birth))
-    df.drop(columns=['birth_number'], inplace=True)
-
+    
     df.rename(columns={'district_id': 'client_district_id'}, inplace=True)
     return df
 
@@ -407,12 +418,14 @@ def merge_datasets(db, test=False):
     df = pd.merge(df, transaction, how="left", on="account_id")
     df = pd.merge(df, cards, how="left", on="account_id")
 
+    df.drop(columns=['birth_number'], inplace=True)
+    
     return df
 
 def extract_features(df):
 
     # Age when the loan was requested
-    df['age_when_loan'] = calculate_age(df['birth_date'], df['granted_date'])
+    df['age_when_loan'] = calculate_age_loan(df['birth_date'], df['granted_date'])
     df.drop(columns=['birth_date'], inplace=True)
 
     # Days between loan and account creation
@@ -483,5 +496,87 @@ def clean(output_name):
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 
 
+#############
+# CLUSTERING
+#############
+def clustering_agglomerative():
+    df = clean_clients(db)
+
+    df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
+    df.drop(columns=['birth_number', 'birth_date'], inplace=True)
+
+    print(df)
+
+    # Create Dendrogram
+    dendrogram = sch.dendrogram(sch.linkage(df, method='ward'))
+    #plt.show()
+    #plt.clf()
+
+    # Create Clusters
+    hc = AgglomerativeClustering(n_clusters=3, affinity = 'euclidean', linkage = 'ward')
+    data = df.drop(columns=['client_id']).values
+
+    # save clusters for chart
+    labels = hc.fit_predict(data)
+
+    # plt.scatter(data[:,0], data[:,1], c=labels, cmap='rainbow')
+    
+    print(labels)
+
+    fig = plt.figure(figsize = (15,15))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(data[labels == 1,0],data[labels == 1,1],data[labels == 1,2], s = 40 , color = 'orange', label = "cluster 1", alpha=0.6)
+    ax.scatter(data[labels == 2,0],data[labels == 2,1],data[labels == 2,2], s = 40 , color = 'green', label = "cluster 2", alpha=0.6)
+    ax.scatter(data[labels == 3,0],data[labels == 3,1],data[labels == 3,2], s = 40 , color = 'red', label = "cluster 3")
+    ax.set_xlabel('District of the client-->')
+    ax.set_ylabel('Gender of the client-->')
+    ax.set_zlabel('Age of the client-->')
+    ax.legend()
+    plt.show()
+
+def clustering_kmeans():
+    # TODO: juntar transactions, de modo a que um client tenha num_trans (todos os de 1 account fazem a transaction)
+    
+    clients = clean_clients(db)
+    district = clean_districts(db)
+    disp = db.df_query('SELECT * FROM disposition')
+    transactions = clean_transactions(db)
+    
+    df = pd.merge(clients, district, left_on="client_district_id", right_on="district_id", how="left")
+    df = pd.merge(df, disp, on='client_id', how="left")
+
+    print(df)
+
+    df['num_trans'] = df.apply(lambda x: print(x)) #calculate_num_trans(x['account_id'])
+
+    df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
+
+    print(df)
+
+    plt.scatter(df['ratio_entrepeneurs'],df['avg_crimes'])
+    plt.show()
+    plt.clf()
+
+    x = df[['ratio_entrepeneurs', 'avg_crimes']]
+
+    scaler = StandardScaler()
+    x = scaler.fit_transform(x)
+
+    print(x)
+
+    kmeans = KMeans(3)
+    kmeans.fit(x)
+
+    identified_clusters = kmeans.fit_predict(x)
+
+    print(identified_clusters)
+
+    data_with_clusters = df.copy()
+    data_with_clusters['Clusters'] = identified_clusters 
+    plt.scatter(data_with_clusters['ratio_entrepeneurs'], data_with_clusters['avg_crimes'], c=data_with_clusters['Clusters'], cmap='rainbow')
+
+    plt.show()
+
 if __name__ == "__main__":
-    clean(sys.argv[1])
+    #clean(sys.argv[1])
+    clustering_kmeans()
