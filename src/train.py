@@ -28,26 +28,20 @@ def train(classifier_name, submission_name):
     # Scaling
     scaler = MinMaxScaler()
     df = normalize_if_not_tree_based(df, classifier_name, scaler)
-    #normalized_df = normalize(df, scaler)
 
 
     # Define goal feature
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
-    #X_normalized = normalized_df.drop(columns=['loan_status'])
-    #y_normalized = normalized_df['loan_status']
-
 
     # Apply SMOTE on imbalanced dataset
     oversample = SMOTE(random_state=RS)
     X, y = oversample.fit_resample(X, y)
-    #X_normalized, y_normalized = oversample.fit_resample(X_normalized, y_normalized)
 
 
     # Feature Selection
     X = filter_feature_selection(X, y)
-    #X_normalized, y_normalized = filter_feature_selection(X_normalized, y_normalized)
 
 
     # Get Classifier
@@ -60,7 +54,6 @@ def train(classifier_name, submission_name):
     if CROSS_VALIDATION:
         cross_validation(X, y, classifier, kf, num_splits)
     else:
-        #compare_classifiers(kf, X, y, X_normalized, y_normalized)
         no_cross_validation(X, y, classifier, kf)
 
     # Save model
@@ -197,11 +190,22 @@ def grid_search(classifier_name, submission_name):
 
     scaler = MinMaxScaler()
     df = normalize_if_not_tree_based(df, classifier_name, scaler)
+    normalized_df = normalize(df, scaler)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
 
-    X, y = filter_feature_selection(X, y)
+    X_normalized = normalized_df.drop(columns=['loan_status'])
+    y_normalized = normalized_df['loan_status']
+
+    # Apply SMOTE on imbalanced dataset
+    oversample = SMOTE(random_state=RS)
+    X, y = oversample.fit_resample(X, y)
+
+    X_normalized, y_normalized = oversample.fit_resample(X_normalized, y_normalized)
+
+    X = filter_feature_selection(X, y)
+    X_normalized = filter_feature_selection(X_normalized, y_normalized)
 
     params = get_grid_params(classifier_name)
     classifier = get_classifier(classifier_name)
@@ -213,6 +217,12 @@ def grid_search(classifier_name, submission_name):
         n_jobs = -1)
 
     grid_results = grid_search_var.fit(X, y)
+
+    # Cross-Validation
+    num_splits = 3
+    kf = KFold(num_splits, random_state=RS, shuffle=True)
+
+    compare_classifiers(kf, X, y, X_normalized, y_normalized)
 
     print('Best Parameters: ', grid_results.best_params_)
     print('Best Score: ', grid_results.best_score_)
