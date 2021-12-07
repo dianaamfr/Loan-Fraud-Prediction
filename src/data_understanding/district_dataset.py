@@ -21,13 +21,13 @@ def district_du():
     df.dropna(inplace=True) # Remove NaN values
 
     stats(df)
-    district_distribution(df)
-    district_correlation(df.copy())
-    variable_relations(df.copy())
+   # district_distribution(df)
+   # district_correlation(df.copy())
+   # variable_relations(df.copy())
 
     average_crimes()
-    average_unemployment()
-    same_district()
+   # average_unemployment()
+   # same_district()
 
     loan_relations()
 
@@ -150,8 +150,9 @@ def variable_relations(district_df):
     sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_inhabitants", sizes=(40, 400), alpha=.8,height=6)
     plt.savefig(get_correlation_folder('district')/'inhabitants_crimes_95.jpg')
     plt.clf()
+    plt.rcParams['font.size'] = '14'
 
-    g = sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", hue="average_salary", size="average_salary", sizes=(10, 400), alpha=0.8)
+    g = sns.relplot(data=district_df, y="nr_commited_crimes_95", x="nr_commited_crimes_96", hue="average_salary", size="average_salary", sizes=(10, 400), alpha=0.8, color='grey')
     g.set(xscale="log")
     g.set(yscale="log")
     plt.savefig(get_correlation_folder('district')/'crimes_salary.jpg')
@@ -174,10 +175,10 @@ def average_crimes():
     
     # Average crimes for the district of the account
 
-    df_good.avg_crimes.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
+    df_good.avg_crimes.hist(bins=20, ax=ax1, label='status 1', color='#00cfccff', alpha=0.6, 
      weights=np.ones(len(df_good.avg_crimes)) / len(df_good.avg_crimes))
    
-    df_bad.avg_crimes.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+    df_bad.avg_crimes.hist(bins=20, ax=ax2, label='status -1', color='#ff9973ff', alpha=0.6,
      weights=np.ones(len(df_bad.avg_crimes)) / len(df_bad.avg_crimes))
 
     ax1.set_title('Average crimes on the districts of the accounts')

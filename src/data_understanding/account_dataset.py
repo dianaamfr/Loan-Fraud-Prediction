@@ -69,8 +69,8 @@ def frequency_status():
 
     fig, ax = plt.subplots(figsize=(7, 6))
 
-    plt.bar(x_axis - 0.2, df_good['frequency'].value_counts()/len(df_good), 0.4, label = 'status 1', color='green', alpha=0.6)
-    plt.bar(x_axis + 0.2, df_bad['frequency'].value_counts()/len(df_bad), 0.4, label = 'status -1', color='red', alpha=0.6)
+    plt.bar(x_axis - 0.2, df_good['frequency'].value_counts()/len(df_good), 0.4, label = 'status 1', color='#00cfccff', alpha=0.6)
+    plt.bar(x_axis + 0.2, df_bad['frequency'].value_counts()/len(df_bad), 0.4, label = 'status -1', color='#ff9973ff', alpha=0.6)
 
     plt.xticks(x_axis, df['frequency'].unique())
     plt.xlabel("Frequency", labelpad=10)
@@ -94,29 +94,51 @@ def days_between_account_loan():
 
     df['days_between_statistics'] = df['granted_date'] - df['creation_date']
 
+
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
+    plt.rcParams['font.size'] = '14'
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     
-    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
+   # fig.text(0.5, 0.04, 'Days Between Account Creation and Loan Issuance', ha='center', va='center')
+    fig.text(0.06, 0.5, 'Percentage of loans', ha='center', va='center', rotation='vertical')
+
+    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='status = 1', color='#00cfccff',  
      weights=np.ones(len(df_good.days_between_statistics.dt.days)) / len(df_good.days_between_statistics.dt.days))
    
-    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='status = -1', color='#ff9973ff', 
      weights=np.ones(len(df_bad.days_between_statistics.dt.days)) / len(df_bad.days_between_statistics.dt.days))
 
     ax1.set_ylim([0,0.15])
     ax2.set_ylim([0,0.15])
-
     ax1.set_title('Days Between Account Creation and Loan Issuance')
-    ax2.set_title('Days Between Account Creation and Loan Issuance')
+    
     ax1.legend()
     ax2.legend()
 
     ax1.yaxis.set_major_formatter(PercentFormatter(1)) 
     ax2.yaxis.set_major_formatter(PercentFormatter(1)) 
-
+    
     plt.savefig(get_correlation_folder('account')/'loan_account_dates.jpg')
+    plt.clf()
+
+    x_axis = df['days_between_statistics'].dt.days
+    print(x_axis)
+
+    #sns.barplot(x=df["days_between_statistics"], y=df["days_between_statistics"].dt.days.value_counts(normalize=True),hue="loan_status", data=df, palette=["#ff9973ff", "#00cfccff"])
+    #sns.histplot(data=df,  x=x_axis, y=df['days_between_statistics'].dt.days.value_counts()/len(df), hue="loan_status", palette=["#ff9973ff", "#00cfccff"]) 
+
+    out = pd.cut(x_axis, bins=[100, 200, 300, 400,500,600,700], include_lowest=True)
+    sns.barplot(x=x_axis, y=df_good['days_between_statistics'].dt.days.value_counts()/len(df_good), label = 'status 1', color='green', alpha=0.6)
+    sns.barplot (x=x_axis, y=df_bad['days_between_statistics'].dt.days.value_counts()/len(df_bad), label = 'status -1', color='red', alpha=0.6)
+
+   
+     
+    #ax.yaxis.set_major_formatter(PercentFormatter(1))
+    
+    plt.savefig(get_correlation_folder('account')/'new')
     plt.clf()
 
 # Dates of the loans issuance # TODO -> Meter só os anos ; O gráfico tem algum valor?

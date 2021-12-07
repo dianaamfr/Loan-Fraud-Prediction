@@ -6,21 +6,21 @@ from utils import *
 import sys
 from matplotlib.ticker import PercentFormatter
 from datetime import datetime
-
+import itertools
 sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
 
 def loan_train_du():
     df = db.df_query('SELECT * FROM loan_train')
-    stats(df)
-    loan_train_distribution(df.copy())
+    #stats(df)
+    #loan_train_distribution(df.copy())
     loan_train_correlation(df.copy())
-    loan_amount_status(df.copy())
-    loan_duration_status(df.copy())
-    loan_payments_status(df.copy())
-    client_age_on_loan()
-    client_gender_status()
+    #loan_amount_status(df.copy())
+    #loan_duration_status(df.copy())
+    #loan_payments_status(df.copy())
+    #client_age_on_loan()
+    #client_gender_status()
 
 def loan_train_distribution(df):  
     sns.histplot(df['granted_date'])
@@ -99,6 +99,7 @@ def loan_test_distribution(df):
 
 def loan_train_correlation(df):
     
+    plt.rcParams['font.size'] = '14'
     #Correlation Matrix
     fig, ax = plt.subplots(figsize=(20, 15))
     sns.heatmap(
@@ -124,7 +125,7 @@ def loan_train_correlation(df):
 
     # Amount/Duration = Payments
     df["amount/duration"] = df["amount"] / df["duration"]
-    sns.scatterplot(data=df, y="payments", x="amount/duration", hue="loan_status")
+    sns.scatterplot(data=df, y="payments", x="amount/duration", hue="loan_status",palette=["#ff9973ff", "#00cfccff"])
     plt.savefig(get_correlation_folder('loan')/'amount_payments_duration.jpg')
     plt.clf()
 
@@ -137,12 +138,16 @@ def loan_amount_status(df):
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
+    plt.rcParams['font.size'] = '16'
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
-    df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
+    fig.text(0.5, 0.04, 'Loan Amount', ha='center', va='center')
+    fig.text(0.06, 0.5, 'Percentage of loans', ha='center', va='center', rotation='vertical')
+
+    df_good.amount.hist(bins=20, ax=ax1, label='status = 1', color='#00cfccff', 
      weights=np.ones(len(df_good.amount)) / len(df_good.amount))
 
-    df_bad.amount.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+    df_bad.amount.hist(bins=20, ax=ax2, label='status = -1', color='#ff9973ff', 
      weights=np.ones(len(df_bad.amount)) / len(df_bad.amount))
 
     ax1.set_ylim([0,0.16])
@@ -233,7 +238,10 @@ def client_age_on_loan():
     merged_df['owner_age_on_loan'] = (merged_df['granted_date'] - merged_df['birth_number']).dt.days / 365
     
 
-    sns.kdeplot( merged_df['owner_age_on_loan'], shade=True)
+    sns.kdeplot( merged_df['owner_age_on_loan'], shade=True, color= 'grey')
+    
+    plt.rcParams['font.size'] = '16'
+    plt.rcParams['figure.facecolor'] = 'black'
     plt.savefig(get_correlation_folder('loan')/'owner_age_on_loan.jpg')
     plt.clf()
 
