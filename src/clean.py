@@ -108,7 +108,7 @@ def transform_status(df):
 
 def clean_loans(db, test=False):
     table = 'loan_test' if test is True else 'loan_train'
-    df = db.df_query('SELECT * FROM ' + table)
+    df = db.df_query('SELECT loan_id, granted_date, amount, payments, loan_status, account_id FROM ' + table)
 
     # Format loan date
     df = format_date(df, 'granted_date')
