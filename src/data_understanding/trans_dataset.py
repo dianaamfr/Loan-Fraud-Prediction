@@ -295,6 +295,105 @@ def last_balance_loan():
     plt.savefig(get_correlation_folder('trans')/'loan_balance.jpg')
     plt.clf()
 
+def trans_operations():
+    df = db.df_query('SELECT * FROM trans_train')
+
+    # Rename columns and fill NaN
+    df = df.replace(r'^\s*$', np.NaN, regex=True)
+    df["operation"].fillna("interest credited", inplace=True)
+    df.loc[df["operation"]=="credit in cash", "operation"] = "CashC"
+    df.loc[df["operation"]=="collection from anot", "operation"] = "Coll"
+    df.loc[df["operation"]=="interest credited", "operation"] = "Interest"
+    df.loc[df["operation"]=="withdrawal in cash", "operation"] = "CashW"
+    df.loc[df["operation"]=="remittance to anothe", "operation"] = "Rem"
+    df.loc[df["operation"]=="credit card withdraw", "operation"] = "CardW"
+
+    # Get number of each operation for each account
+
+    operation_df = df.groupby(['account_id', 'operation']).agg({'trans_id': ['count']}).reset_index()
+    operation_df.columns = ['account_id', 'operation', 'operation_count']
+    
+    # credit in cash = CashC
+    cashC_operation = operation_df[operation_df['operation'] == 'CashC']
+    cashC_operation.columns = ['account_id', 'operation', 'num_cash_credit']
+    cashC_operation = cashC_operation.drop(['operation'], axis=1)
+
+    # collection from another bank = Coll
+    coll_operation = operation_df[operation_df['operation'] == 'Coll']
+    coll_operation.columns = ['account_id', 'operation', 'num_coll']
+    coll_operation = coll_operation.drop(['operation'], axis=1)
+
+    # interest credited = Interest,
+    interest_operation = operation_df[operation_df['operation'] == 'Interest']
+    interest_operation.columns = ['account_id', 'operation', 'num_interest']
+    interest_operation = interest_operation.drop(['operation'], axis=1)
+
+    # withdrawal in cash = CashW
+    cashW_operation = operation_df[operation_df['operation'] == 'CashW']
+    cashW_operation.columns = ['account_id', 'operation', 'num_cash_withdrawal']
+    cashW_operation = cashW_operation.drop(['operation'], axis=1)
+
+    # remittance to another bank = Rem
+    rem_operation = operation_df[operation_df['operation'] == 'Rem']
+    rem_operation.columns = ['account_id', 'operation','num_rem']
+    rem_operation = rem_operation.drop(['operation'], axis=1)
+
+    # credit card withdrawal = CardW
+    cardW_operation = operation_df[operation_df['operation'] == 'CardW']
+    cardW_operation.columns = ['account_id', 'operation', 'num_card_withdrawal']
+    cardW_operation = cardW_operation.drop(['operation'], axis=1)
+    
+    operation_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(interest_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(cashW_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(rem_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(cardW_operation, on='account_id',how='outer')
+    operation_df.fillna(0, inplace=True)
+
+    operation_num = ['num_cash_credit','num_rem','num_card_withdrawal', 'num_cash_withdrawal', 'num_interest', 'num_coll']
+    operation_df['total_operations'] = operation_df[operation_num].sum(axis=1)
+
+    # Calculate Ratio for each operation
+    operation_df['cash_credit_ratio'] = operation_df['num_cash_credit']/operation_df['total_operations']
+    operation_df['rem_ratio'] = operation_df['num_rem']/operation_df['total_operations']
+    operation_df['card_withdrawal_ratio'] = operation_df['num_card_withdrawal']/operation_df['total_operations']
+    operation_df['cash_withdrawal_ratio'] = operation_df['num_cash_withdrawal']/operation_df['total_operations']
+    operation_df['interest_ratio'] = operation_df['num_interest']/operation_df['total_operations']
+    operation_df['coll_ratio'] = operation_df['num_coll']/operation_df['total_operations']
+
+    # Join trans with loan
+    loan_df = db.df_query('SELECT * FROM loan_train')  
+    df = pd.merge(loan_df, operation_df, how="left",on="account_id")
+
+    df_good = df.loc[df['loan_status'] == 1]
+    df_bad = df.loc[df['loan_status'] == -1]
+
+    operation_ratios = ['cash_credit_ratio','rem_ratio','card_withdrawal_ratio', 'cash_withdrawal_ratio', 'interest_ratio', 'coll_ratio']
+
+    for operation in operation_ratios:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+        
+        sns.histplot(ax=ax1, label='status 1', color='green', alpha=0.6, data=df_good, x=operation)
+        sns.histplot(ax=ax2, label='status -1', color='red', alpha=0.6, data=df_bad, x=operation)
+
+        ax1.set_xlim([0,1])
+        ax2.set_xlim([0,1])
+        ax1.set_ylim([0,100])
+        ax2.set_ylim([0,100])
+
+        # ax1.set_title('Average transaction balance of the accounts')
+        # ax2.set_title('Average transaction balance of the accounts')
+        ax1.legend()
+        ax2.legend()
+
+        ax1.xaxis.set_major_formatter(PercentFormatter(1))
+        ax2.xaxis.set_major_formatter(PercentFormatter(1))
+
+        name = operation+'_status.jpg'
+        plt.savefig(get_correlation_folder('trans')/name)
+        plt.clf()
+    
+
 if __name__ == '__main__':
     create_plots_folders('trans')
     trans_test_du()
@@ -307,3 +406,5 @@ if __name__ == '__main__':
     transactions_correlation_matrix()
     transactions_loan_date()
     last_balance_loan()
+
+    trans_operations()

@@ -8,7 +8,7 @@ from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 
-RS = 42
+RS = None
 BASE_ESTIMATOR = 'random_forest'
 TREE_BASED_CLASSIFIERS = ['decision_tree','random_forest','xgboost','gradient_boosting']
 
