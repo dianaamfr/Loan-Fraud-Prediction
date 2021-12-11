@@ -9,7 +9,8 @@ import seaborn as sns
 import scipy.cluster.hierarchy as sch
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+import plotly.graph_objects as go
 
 sys.path.insert(1, '.')
 from database import database
@@ -92,9 +93,13 @@ def calculate_age_loan(birth_date, loan_date):
 
     return dates['difference']
 
-def calculate_num_trans(account_id):
-    df = db.df_query(f'SELECT COUNT(trans_id) AS num_trans FROM account JOIN trans_train USING(account_id) WHERE account_id={account_id} GROUP BY account_id')
-    return df['num_trans'][0]
+def economic_features():
+    # SELECT join account, trans, client, disp 
+    df_economic = db.df_query(f'SELECT account_id, AVG(balance) AS average_balance, COUNT(trans_id) AS num_trans \
+        FROM account JOIN trans_train USING(account_id) JOIN disposition USING(account_id) JOIN client USING(client_id) \
+        GROUP BY account_id')
+
+    return df_economic
 
 def transform_status(df):
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
@@ -200,7 +205,7 @@ def clean_districts(db):
     df.drop(columns=['nr_commited_crimes_95','nr_commited_crimes_96','unemployment_rate_95','unemployment_rate_96', 'nr_enterpreneurs_1000_inhabitants', 'district_name'], inplace=True)
 
     # Encode Region
-    df = encode_category(df, 'region')
+    # df = encode_category(df, 'region')
     
     return df
 
@@ -493,6 +498,8 @@ def clean(output_name):
 
     df_test = df_test.set_index('loan_id')
 
+    print(df_test.columns)
+
     df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 
 
@@ -534,49 +541,95 @@ def clustering_agglomerative():
     ax.legend()
     plt.show()
 
+def get_cardinal_point(region):
+    cardinal_points = ['south','west','north','east', 'central']
+    for cp in cardinal_points:
+        if cp in region:
+            return cp
+    return 'central'
+
 def clustering_kmeans():
-    # TODO: juntar transactions, de modo a que um client tenha num_trans (todos os de 1 account fazem a transaction)
-    
+
     clients = clean_clients(db)
     district = clean_districts(db)
+
+    district['region'] = district.apply(lambda x: get_cardinal_point(x['region']), axis=1)
+    
     disp = db.df_query('SELECT * FROM disposition')
     transactions = clean_transactions(db)
     
     df = pd.merge(clients, district, left_on="client_district_id", right_on="district_id", how="left")
     df = pd.merge(df, disp, on='client_id', how="left")
 
-    print(df)
+    df_economic = economic_features()
+    df = pd.merge(df, df_economic, on='account_id', how="left")
+    df.fillna(0, inplace=True)
 
-    df['num_trans'] = df.apply(lambda x: print(x)) #calculate_num_trans(x['account_id'])
-
+    # Maybe use the age of the client when the loan was issued
     df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
 
+    print("----------------------------------------")
     print(df)
+    
+    df = encode_category(df, 'region')
 
-    plt.scatter(df['ratio_entrepeneurs'],df['avg_crimes'])
-    plt.show()
-    plt.clf()
+    #plt.scatter(df['client_id'],df['region'])
+    # plt.show()
+    # plt.clf()
 
-    x = df[['ratio_entrepeneurs', 'avg_crimes']]
+    x = df[['average_salary', 'num_trans', 'average_balance']]
 
-    scaler = StandardScaler()
+    scaler = MinMaxScaler()
     x = scaler.fit_transform(x)
 
-    print(x)
-
     kmeans = KMeans(3)
-    kmeans.fit(x)
+    #kmeans.fit(x)
 
     identified_clusters = kmeans.fit_predict(x)
 
-    print(identified_clusters)
+    # x['cluster'] = pd.Series(identified_clusters, index=df.index)
 
-    data_with_clusters = df.copy()
-    data_with_clusters['Clusters'] = identified_clusters 
-    plt.scatter(data_with_clusters['ratio_entrepeneurs'], data_with_clusters['avg_crimes'], c=data_with_clusters['Clusters'], cmap='rainbow')
+    # x['cluster'] = identified_clusters.tolist()
+    # # df.insert(loc=0, column='cluster', value=identified_clusters.tolist())
 
+    fig = plt.figure(figsize = (15,15))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x[identified_clusters == 0,0],x[identified_clusters == 0,1],x[identified_clusters == 0,2], s = 40 , color = 'orange', label = "cluster 1", alpha=0.6)
+    ax.scatter(x[identified_clusters == 1,0],x[identified_clusters == 1,1],x[identified_clusters == 1,2], s = 40 , color = 'green', label = "cluster 2", alpha=0.6)
+    ax.scatter(x[identified_clusters == 2,0],x[identified_clusters == 2,1],x[identified_clusters == 2,2], s = 40 , color = 'red', label = "cluster 3", alpha=0.6)
+    ax.set_xlabel('average_salary -->')
+    ax.set_ylabel('num_trans -->')
+    ax.set_zlabel('average_balance -->')
+    ax.legend()
     plt.show()
 
+    # PLOT = go.Figure()
+
+    # for C in list(x.cluster.unique()):
+        
+    #     PLOT.add_trace(go.Scatter3d(x = x[x.cluster == C]['average_salary'],
+    #                                 y = x[x.cluster == C]['num_trans'],
+    #                                 z = x[x.cluster == C]['average_balance'],
+    #                                 mode = 'markers', marker_size = 8, marker_line_width = 1,
+    #                                 name = 'Cluster ' + str(C)))
+
+
+    # PLOT.update_layout(width = 800, height = 800, autosize = True, showlegend = True,
+    #                 scene = dict(xaxis=dict(title = 'average_salary', titlefont_color = 'black'),
+    #                                 yaxis=dict(title = 'num_trans', titlefont_color = 'black'),
+    #                                 zaxis=dict(title = 'average_balance', titlefont_color = 'black')),
+    #                 font = dict(family = "Gilroy", color  = 'black', size = 12))
+
+    print(f"SCORE: { kmeans.score(x) }")
+
+    # print(identified_clusters)
+
+    # PLOT.show()
+
+    # data_with_clusters = df.copy()
+    # data_with_clusters['Clusters'] = identified_clusters 
+    # plt.scatter(data_with_clusters['client_id'], data_with_clusters['region'], c=data_with_clusters['Clusters'], cmap='rainbow')
+
 if __name__ == "__main__":
-    clean(sys.argv[1])
-    # clustering_kmeans()
+    # clean(sys.argv[1])
+    clustering_kmeans()
