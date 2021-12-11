@@ -29,28 +29,28 @@ def train(classifier_name, submission_name):
     scaler = MinMaxScaler()
     df = normalize_if_not_tree_based(df, classifier_name, scaler)
 
-
     # Define goal feature
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
-
 
     # Apply SMOTE on imbalanced dataset
     oversample = SMOTE(random_state=RS)
     X, y = oversample.fit_resample(X, y)
 
-
-    # Feature Selection
-    X = filter_feature_selection(X, y)
-
-
     # Get Classifier
     classifier = get_classifier_best(classifier_name)
-    
-    # Fit Classifier and Predict
+
+    # Cross Validation
     num_splits = 3
     kf = KFold(num_splits, random_state=RS, shuffle=True)
 
+    # Feature Selection
+    # X = recursive_cv_feature_selection(X, y, classifier, kf)
+    # X = recursive_feature_selection(X, y, classifier)
+    X = filter_feature_selection(X, y)
+    # X = extra_tree_feature_selection(X,y)
+
+    # Fit Classifier and Predict
     if CROSS_VALIDATION:
         cross_validation(X, y, classifier, kf, num_splits)
     else:
@@ -194,33 +194,37 @@ def grid_search(classifier_name, submission_name):
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
-
     X_normalized = normalized_df.drop(columns=['loan_status'])
     y_normalized = normalized_df['loan_status']
 
     # Apply SMOTE on imbalanced dataset
     oversample = SMOTE(random_state=RS)
     X, y = oversample.fit_resample(X, y)
-
     X_normalized, y_normalized = oversample.fit_resample(X_normalized, y_normalized)
 
-    X = filter_feature_selection(X, y)
-    X_normalized = filter_feature_selection(X_normalized, y_normalized)
-
-    params = get_grid_params(classifier_name)
+    # Get classifier
     classifier = get_classifier(classifier_name)
-    grid_search_var = GridSearchCV(
-        estimator=classifier,
-        param_grid = params,
-        scoring='roc_auc',
-        cv=KFold(5, random_state=RS, shuffle=True),
-        n_jobs = -1)
-
-    grid_results = grid_search_var.fit(X, y)
 
     # Cross-Validation
     num_splits = 3
     kf = KFold(num_splits, random_state=RS, shuffle=True)
+
+    # Feature Selection
+    # X = recursive_cv_feature_selection(X, y, classifier, kf)
+    # X = recursive_feature_selection(X, y, classifier)
+    X = filter_feature_selection(X, y)
+    X_normalized = filter_feature_selection(X_normalized, y_normalized)
+    # X = extra_tree_feature_selection(X,y)
+
+    params = get_grid_params(classifier_name)
+    grid_search_var = GridSearchCV(
+        estimator=classifier,
+        param_grid = params,
+        scoring='roc_auc',
+        cv=kf,
+        n_jobs = -1)
+
+    grid_results = grid_search_var.fit(X, y)
 
     compare_classifiers(kf, X, y, X_normalized, y_normalized)
 
