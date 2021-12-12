@@ -813,7 +813,7 @@ def features_for_clustering(df):
     # Original columns
     #print(df.columns)
 
-    #print(df)
+    # print(df)
     return df[['nr_inhabitants', 'ratio_urban_inhabitants', 'avg_crimes', 'ratio_entrepeneurs', 
     'average_salary', 'avg_unemployment', 'criminality_growth', 'unemployment_growth', 'avg_amount_credit', 'avg_amount_withdrawal',
     'avg_amount_total', 'min_amount','max_amount', 'credit_ratio','avg_balance', 'num_trans', 'min_balance', 'age']]
@@ -856,10 +856,12 @@ def clustering_dbscan():
     plt.plot(var)
     plt.show()
 
-    pca = PCA(n_components=2)
+    pca = PCA(n_components=3)
+    # pca = PCA(n_components=2)
     pca.fit(df_scale)
     pca_scale = pca.transform(df_scale)
-    pca_df = pd.DataFrame(pca_scale, columns=['pc1', 'pc2'])
+    pca_df = pd.DataFrame(pca_scale, columns=['pc1', 'pc2', 'pc3'])
+    #pca_df = pd.DataFrame(pca_scale, columns=['pc1', 'pc2'])
     print(pca.explained_variance_ratio_)
     
     pca_eps_values = np.arange(0.2,1.5,0.1) 
@@ -879,7 +881,8 @@ def clustering_dbscan():
     pca_eps_min_df = pd.DataFrame(pca_eps_min, columns=['no_of_clusters', 'silhouette_score', 'epsilon_values', 'minimum_points'])
     print(pca_eps_min_df)
 
-    dbscan = DBSCAN(eps=0.6, min_samples=3).fit(pca_df)
+    dbscan = DBSCAN(eps=0.8, min_samples=4).fit(pca_df)
+    #dbscan = DBSCAN(eps=0.6, min_samples=3).fit(pca_df)
     labels = dbscan.labels_
     # Number of clusters in labels, ignoring noise if present.
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -888,10 +891,11 @@ def clustering_dbscan():
     print('Estimated number of noise points: %d' % n_noise_)
     print("Silhouette Coefficient: %0.3f" % silhouette_score(pca_df, labels))
 
-    Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'))
-    # model.labels_ is nothing but the predicted clusters i.e y_clusters
+    Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'),zaxis = dict(title  = 'PC3'))
+    #Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'))
     labels = dbscan.labels_
-    trace = go.Scatter(x=pca_df.iloc[:,0], y=pca_df.iloc[:,1], mode='markers',marker=dict(color = labels, colorscale='Viridis', size = 6, line = dict(width = 0)))
+    trace = go.Scatter3d(x=pca_df.iloc[:,0], y=pca_df.iloc[:,1], z=pca_df.iloc[:,2], mode='markers',marker=dict(color = labels, colorscale='Viridis', size = 6, line = dict(width = 0)))
+    #trace = go.Scatter(x=pca_df.iloc[:,0], y=pca_df.iloc[:,1], mode='markers',marker=dict(color = labels, colorscale='Viridis', size = 6, line = dict(width = 0)))
     layout = go.Layout(scene = Scene, height = 1000,width = 1000)
     data = [trace]
     fig = go.Figure(data = data, layout = layout)
