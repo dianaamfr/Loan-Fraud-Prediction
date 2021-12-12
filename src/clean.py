@@ -16,6 +16,8 @@ from sklearn import metrics
 sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
+from sklearn.cluster import DBSCAN
+import plotly.graph_objects as go
 
 #pd.set_option('display.max_columns', None)
 
@@ -123,7 +125,7 @@ def economic_features():
     trans_type_count_df = pd.merge(credit_counts, withdrawal_counts, on="account_id", how="outer")
     trans_type_count_df.fillna(0, inplace=True)
     trans_type_count_df['credit_ratio'] = trans_type_count_df['num_credits'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
-    trans_type_count_df.drop(columns=['num_credits', 'num_withdrawals'])
+    trans_type_count_df.drop(columns=['num_credits', 'num_withdrawals'], inplace=True)
 
     df_economic = pd.merge(df_economic, trans_type_count_df, on='account_id', how='left')
 
@@ -637,8 +639,6 @@ def clustering_agglomerative():
     labels = hc.fit_predict(data)
 
     # plt.scatter(data[:,0], data[:,1], c=labels, cmap='rainbow')
-    
-    print(labels)
 
     fig = plt.figure(figsize = (15,15))
     ax = fig.add_subplot(111, projection='3d')
@@ -662,13 +662,15 @@ def clustering_kmeans():
 
     clients = clean_clients(db)
     district = clean_districts(db)
+    loan = clean_loans(db)
 
     district['region'] = district.apply(lambda x: get_cardinal_point(x['region']), axis=1)
     
     disp = db.df_query('SELECT * FROM disposition')
     
-    df = pd.merge(clients, district, left_on="client_district_id", right_on="district_id", how="left")
-    df = pd.merge(df, disp, on='client_id', how="left")
+    df = pd.merge(loan, disp, on='account_id', how="left")
+    df = pd.merge(df, clients, on='client_id', how="left")
+    df = pd.merge(df, district, left_on="client_district_id", right_on="district_id", how="left")
 
     df_economic = economic_features()
     df = pd.merge(df, df_economic, on='account_id', how="left")
@@ -677,7 +679,10 @@ def clustering_kmeans():
     # Maybe use the age of the client when the loan was issued
     df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
 
-    print("----------------------------------------")
+    # Create Dendrogram
+    # dendrogram = sch.dendrogram(sch.linkage(df, method='ward'))
+    # plt.savefig('dendogram.jpg')
+    # plt.clf()
 
     # rem_ration - coll ration OK
     # rem_ration - age 
@@ -690,35 +695,51 @@ def clustering_kmeans():
     # avg_balance - credit_ratio - nr_ent UNA MIERDA
     # num_trans - credit_ratio - ratio_ent
 
-    plt.scatter(df['num_trans'],df['credit_ratio'])
-    plt.show()
-    plt.clf()
+    # plt.scatter(df['num_trans'],df['credit_ratio'])
+    # plt.show()
+    # plt.clf()
+
     
-    df = df[['num_trans', 'credit_ratio', 'ratio_entrepeneurs']]
+    df = encode_category(df, 'disp_type')
+    df = df[['amount', 'payments', 'loan_status', 'num_trans', 'avg_amount', 'disp_type', 'district_id', 'average_salary', 'unemployment_growth', 'ratio_entrepeneurs', 'credit_ratio', 'age']]
 
     scaler = MinMaxScaler()
     x = scaler.fit_transform(df)
-
+    
     kmeans = KMeans(3)
     identified_clusters = kmeans.fit_predict(x)
+
     print(f'Inertia: {kmeans.inertia_}')
 
     df.insert(loc=0, column='cluster', value=identified_clusters.tolist())
 
+    # pd.concat([k1, k2, k3]).groupby('cluster').mean()
+
+    # k1,k2,k3 = [x[np.where(kmeans.labels_==i)] for i in range(3)] # range(3) because 3 clusters
+
+    k1,k2,k3 = [df.loc[df['cluster']==i] for i in range(3)] # range(3) because 3 clusters
+
+    print(type(k1))
+
+    print(len(k1))
+    print(len(k2))
+    print(len(k3))
+
+    print(k1.describe())
+    print(k2.describe())
+    print(k3.describe())
+
     # # PCA
-    # reduced_data = PCA(n_components=3).fit_transform(df)
-    # results = pd.DataFrame(reduced_data,columns=['pca1','pca2', 'pca3'])
+    # reduced_data = PCA(n_components=2).fit_transform(df)
+    # results = pd.DataFrame(reduced_data,columns=['pca1', 'pca2'])
 
     # fig = plt.figure(figsize=(6,6))
     # ax = Axes3D(fig, auto_add_to_figure=False)
     # fig.add_axes(ax)
 
-    # ax.scatter(xs=results["pca1"], ys=results["pca2"], zs=results["pca3"],s=40, marker='o', alpha=1, c=df['cluster'])
-    # plt.title('K-means Clustering with 2 dimensions')
-    # plt.show()
-    # plt.clf()
-
-
+    plt.scatter(x=df["age"], y=df["amount"],s=40, marker='o', alpha=1, c=df['cluster'])
+    plt.show()
+    plt.clf()
 
     nr_clusters = []
     inertias = []
@@ -742,23 +763,85 @@ def clustering_kmeans():
     plt.figure()
     plt.bar(range_values, scores, width=0.6, color='k', align='center')
     plt.title('Silhouette score vs number of clusters')
-        
+    
 
     
     # 3D
 
-    fig = plt.figure(figsize = (15,15))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x[identified_clusters == 0,0],x[identified_clusters == 0,1],x[identified_clusters == 0,2], s = 40 , color = 'orange', label = "cluster 1", alpha=0.6)
-    ax.scatter(x[identified_clusters == 1,0],x[identified_clusters == 1,1],x[identified_clusters == 1,2], s = 40 , color = 'green', label = "cluster 2", alpha=0.6)
-    ax.scatter(x[identified_clusters == 2,0],x[identified_clusters == 2,1],x[identified_clusters == 2,2], s = 40 , color = 'red', label = "cluster 3", alpha=0.6)
-    ax.set_xlabel('max_amount -->')
-    ax.set_ylabel('cash withdrawal -->')
-    ax.set_zlabel('age -->')
-    ax.legend()
-    plt.show()
+    # fig = plt.figure(figsize = (15,15))
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(x[identified_clusters == 0,0],x[identified_clusters == 0,1],x[identified_clusters == 0,2], s = 40 , color = 'orange', label = "cluster 1", alpha=0.6)
+    # ax.scatter(x[identified_clusters == 1,0],x[identified_clusters == 1,1],x[identified_clusters == 1,2], s = 40 , color = 'green', label = "cluster 2", alpha=0.6)
+    # ax.scatter(x[identified_clusters == 2,0],x[identified_clusters == 2,1],x[identified_clusters == 2,2], s = 40 , color = 'red', label = "cluster 3", alpha=0.6)
+    # ax.set_xlabel('max_amount -->')
+    # ax.set_ylabel('cash withdrawal -->')
+    # ax.set_zlabel('age -->')
+    # ax.legend()
+    # plt.show()
+
+
+def clustering_dbscan():
+
+    clients = clean_clients(db)
+    district = clean_districts(db)
+    loan = clean_loans(db)
+
+    district['region'] = district.apply(lambda x: get_cardinal_point(x['region']), axis=1)
+    
+    disp = db.df_query('SELECT * FROM disposition')
+    
+    df = pd.merge(loan, disp, on='account_id', how="left")
+    df = pd.merge(df, clients, on='client_id', how="left")
+    df = pd.merge(df, district, left_on="client_district_id", right_on="district_id", how="left")
+
+    df_economic = economic_features()
+    df = pd.merge(df, df_economic, on='account_id', how="left")
+    df.fillna(0, inplace=True)
+
+    # Maybe use the age of the client when the loan was issued
+    df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
+    
+    print(df.columns)
+    print("----------------------------------------")
+
+    df = df[['amount', 'payments', 'num_trans', 'avg_amount', 'average_salary', 'unemployment_growth', 'ratio_entrepeneurs', 'credit_ratio', 'age']]
+
+    scaler = MinMaxScaler()
+    x = scaler.fit_transform(df)
+
+    # pca = PCA(n_components=7)
+    # pca.fit(x)
+    # variance = pca.explained_variance_ratio_ 
+    # var=np.cumsum(np.round(variance, 3)*100)
+    # plt.figure(figsize=(12,6))
+    # plt.ylabel('% Variance Explained')
+    # plt.xlabel('# of Features')
+    # plt.title('PCA Analysis')
+    # plt.ylim(0,100.5)
+    # plt.plot(var)
+    # plt.show()
+
+    pca = PCA(n_components=3)
+    pca.fit(x)
+    pca_scale = pca.transform(x)
+    pca_df = pd.DataFrame(pca_scale, columns=['pc1', 'pc2', 'pc3'])
+    print(pca.explained_variance_ratio_)
+    
+    dbscan = DBSCAN(eps=1.0, min_samples=4).fit(pca_df)
+    labels = dbscan.labels_
+
+    Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'),zaxis = dict(title  = 'PC3'))
+    # model.labels_ is nothing but the predicted clusters i.e y_clusters
+    labels = dbscan.labels_
+    trace = go.Scatter3d(x=pca_df.iloc[:,0], y=pca_df.iloc[:,1], z=pca_df.iloc[:,2], mode='markers',marker=dict(color = labels, colorscale='Viridis', size = 10, line = dict(color = 'gray',width = 5)))
+    layout = go.Layout(scene = Scene, height = 1000,width = 1000)
+    data = [trace]
+    fig = go.Figure(data = data, layout = layout)
+    fig.update_layout(title="'DBSCAN Clusters (6) Derived from PCA'", font=dict(size=12,))
+    fig.show()
 
 if __name__ == "__main__":
     # clean(sys.argv[1])
-    #clustering_kmeans()
-    clustering_agglomerative()
+    clustering_kmeans()
+    #clustering_agglomerative()
+    #clustering_dbscan()
