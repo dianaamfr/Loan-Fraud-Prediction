@@ -14,6 +14,7 @@ from imblearn.over_sampling import SMOTE
 from statistics import mean
 from utils import *
 from feature_selection import *
+from xgboost import plot_tree
 
 DEBUG = False
 CROSS_VALIDATION = True
@@ -142,6 +143,14 @@ def cross_validation(X, y, classifier, kf, num_splits):
     confusion_matrix_fig.tight_layout()
     plt.savefig('models/confusion_matrix.jpg')
     plt.clf()
+
+    classifier_name = type(classifier).__name__
+
+    if classifier_name == 'XGBClassifier':
+        plt.figure(figsize=(12,12))
+        plot_tree(classifier, fontsize=6)
+        plt.savefig('models/tree.jpg', dpi=400)
+        plt.clf()
   
     print('AUC Train scores of each fold - {}'.format(auc_train_scores))
     print('AUC Test scores of each fold - {}'.format(auc_test_scores))

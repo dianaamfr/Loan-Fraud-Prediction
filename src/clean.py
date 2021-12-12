@@ -10,8 +10,9 @@ import scipy.cluster.hierarchy as sch
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-import plotly.graph_objects as go
-
+from sklearn.decomposition import PCA
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn import metrics
 sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
@@ -94,11 +95,106 @@ def calculate_age_loan(birth_date, loan_date):
     return dates['difference']
 
 def economic_features():
-    # SELECT join account, trans, client, disp 
-    df_economic = db.df_query(f'SELECT account_id, AVG(balance) AS average_balance, COUNT(trans_id) AS num_trans \
+    # Average Balance, Num Transactions
+    df1 = db.df_query(f'SELECT account_id, AVG(balance) AS average_balance, MIN(balance) AS min_balance, COUNT(trans_id) AS num_trans \
         FROM account JOIN trans_train USING(account_id) JOIN disposition USING(account_id) JOIN client USING(client_id) \
         GROUP BY account_id')
 
+    # Amount Features
+    df2 = db.df_query('SELECT amount, account_id, trans_type FROM trans_train')
+    df2.loc[df2["trans_type"]=="withdrawal", "amount"] *= -1
+    amount = df2.groupby(['account_id']).agg({'amount':['mean','min', 'max']}).reset_index()
+    amount.columns = ['account_id', 'avg_amount', 'min_amount', 'max_amount']
+
+    df_economic = pd.merge(df1, amount, on='account_id', how='left')
+
+    # Ratio of credits
+    df4 = db.df_query('SELECT trans_type, account_id FROM trans_train')
+    type_counts = df4.groupby(['account_id', 'trans_type']).size().reset_index(name='counts')
+
+    credit_counts = type_counts[type_counts['trans_type'] == 'credit']
+    credit_counts.columns = ['account_id', 'trans_type', 'num_credits']
+    credit_counts = credit_counts.drop(columns=["trans_type"])
+
+    withdrawal_counts = type_counts[type_counts['trans_type'] == 'withdrawal']
+    withdrawal_counts.columns = ['account_id', 'trans_type', 'num_withdrawals']
+    withdrawal_counts = withdrawal_counts.drop(columns=["trans_type"])
+
+    trans_type_count_df = pd.merge(credit_counts, withdrawal_counts, on="account_id", how="outer")
+    trans_type_count_df.fillna(0, inplace=True)
+    trans_type_count_df['credit_ratio'] = trans_type_count_df['num_credits'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
+    trans_type_count_df.drop(columns=['num_credits', 'num_withdrawals'])
+
+    df_economic = pd.merge(df_economic, trans_type_count_df, on='account_id', how='left')
+
+
+    df3 = db.df_query('SELECT operation, account_id, trans_id FROM trans_train')
+
+    # Operation Nan and rename
+    df3["operation"].fillna("interest credited", inplace=True)
+    df3.loc[df3["operation"]=="credit in cash", "operation"] = "CashC"
+    df3.loc[df3["operation"]=="collection from anot", "operation"] = "Coll"
+    df3.loc[df3["operation"]=="interest credited", "operation"] = "Interest"
+    df3.loc[df3["operation"]=="withdrawal in cash", "operation"] = "CashW"
+    df3.loc[df3["operation"]=="remittance to anothe", "operation"] = "Rem"
+    df3.loc[df3["operation"]=="credit card withdraw", "operation"] = "CardW"
+
+    operation = df3.groupby(['account_id', 'operation']).agg({'trans_id': ['count']}).reset_index()
+    operation.columns = ['account_id', 'operation','operation_count']
+    
+    # credit in cash = CashC
+    cashC_operation = operation[operation['operation'] == 'CashC']
+    cashC_operation.columns = ['account_id', 'operation', 'num_cash_credit']
+    cashC_operation = cashC_operation.drop(['operation'], axis=1)
+
+    # collection from another bank = Coll
+    coll_operation = operation[operation['operation'] == 'Coll']
+    coll_operation.columns = ['account_id', 'operation',  'num_coll']
+    coll_operation = coll_operation.drop(['operation'], axis=1)
+
+    # interest credited = Interest,
+    interest_operation = operation[operation['operation'] == 'Interest']
+    interest_operation.columns = ['account_id', 'operation',  'num_interest']
+    interest_operation = interest_operation.drop(['operation'], axis=1)
+
+    # withdrawal in cash = CashW
+    cashW_operation = operation[operation['operation'] == 'CashW']
+    cashW_operation.columns = ['account_id', 'operation', 'num_cash_withdrawal']
+    cashW_operation = cashW_operation.drop(['operation'], axis=1)
+
+    # remittance to another bank = Rem
+    rem_operation = operation[operation['operation'] == 'Rem']
+    rem_operation.columns = ['account_id', 'operation', 'num_rem']
+    rem_operation = rem_operation.drop(['operation'], axis=1)
+
+    # credit card withdrawal = CardW
+    cardW_operation = operation[operation['operation'] == 'CardW']
+    cardW_operation.columns = ['account_id', 'operation', 'num_card_withdrawal']
+    cardW_operation = cardW_operation.drop(['operation'], axis=1)
+    
+    operation_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(interest_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(cashW_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(rem_operation, on='account_id',how='outer')
+    operation_df = operation_df.merge(cardW_operation, on='account_id',how='outer')
+    operation_df.fillna(0, inplace=True)
+
+    operation_num = ['num_cash_credit','num_rem','num_card_withdrawal', 'num_cash_withdrawal', 'num_interest', 'num_coll']
+    operation_df['total_operations'] = operation_df[operation_num].sum(axis=1)
+
+    # Calculate Ratio for each operation
+    operation_df['cash_credit_ratio'] = operation_df['num_cash_credit']/operation_df['total_operations']
+    operation_df['rem_ratio'] = operation_df['num_rem']/operation_df['total_operations']
+    operation_df['card_withdrawal_ratio'] = operation_df['num_card_withdrawal']/operation_df['total_operations']
+    operation_df['cash_withdrawal_ratio'] = operation_df['num_cash_withdrawal']/operation_df['total_operations']
+    operation_df['interest_ratio'] = operation_df['num_interest']/operation_df['total_operations']
+    operation_df['coll_ratio'] = operation_df['num_coll']/operation_df['total_operations']
+
+    operation_df.drop(columns=operation_num, inplace=True)
+    operation_df.drop(columns=['total_operations'], inplace=True)
+
+    df_economic = pd.merge(df_economic, operation_df, on="account_id", how="outer")
+    
     return df_economic
 
 def transform_status(df):
@@ -507,21 +603,35 @@ def clean(output_name):
 # CLUSTERING
 #############
 def clustering_agglomerative():
-    df = clean_clients(db)
+    clients = clean_clients(db)
+    district = clean_districts(db)
+    loan = clean_loans(db)
 
+    district['region'] = district.apply(lambda x: get_cardinal_point(x['region']), axis=1)
+    
+    disp = db.df_query('SELECT * FROM disposition')
+    
+    df = pd.merge(loan, disp, on='account_id', how="left")
+    df = pd.merge(df, clients, on='client_id', how="left")
+    df = pd.merge(df, district, left_on="client_district_id", right_on="district_id", how="left")
+
+    df_economic = economic_features()
+    df = pd.merge(df, df_economic, on='account_id', how="left")
+    df.fillna(0, inplace=True)
+
+    # Maybe use the age of the client when the loan was issued
     df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
-    df.drop(columns=['birth_number', 'birth_date'], inplace=True)
 
-    print(df)
+    df = df[['average_balance', 'age', 'num_trans']]
 
     # Create Dendrogram
-    dendrogram = sch.dendrogram(sch.linkage(df, method='ward'))
-    #plt.show()
-    #plt.clf()
+    #dendrogram = sch.dendrogram(sch.linkage(df, method='ward'))
+    # plt.savefig('dendogram.jpg')
+    # plt.clf()
 
     # Create Clusters
     hc = AgglomerativeClustering(n_clusters=3, affinity = 'euclidean', linkage = 'ward')
-    data = df.drop(columns=['client_id']).values
+    data = df.values
 
     # save clusters for chart
     labels = hc.fit_predict(data)
@@ -532,12 +642,12 @@ def clustering_agglomerative():
 
     fig = plt.figure(figsize = (15,15))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(data[labels == 1,0],data[labels == 1,1],data[labels == 1,2], s = 40 , color = 'orange', label = "cluster 1", alpha=0.6)
-    ax.scatter(data[labels == 2,0],data[labels == 2,1],data[labels == 2,2], s = 40 , color = 'green', label = "cluster 2", alpha=0.6)
-    ax.scatter(data[labels == 3,0],data[labels == 3,1],data[labels == 3,2], s = 40 , color = 'red', label = "cluster 3")
-    ax.set_xlabel('District of the client-->')
-    ax.set_ylabel('Gender of the client-->')
-    ax.set_zlabel('Age of the client-->')
+    ax.scatter(data[labels == 0,0],data[labels == 0,1],data[labels == 0,2], s = 40 , color = 'orange', label = "cluster 1", alpha=0.6)
+    ax.scatter(data[labels == 1,0],data[labels == 1,1],data[labels == 1,2], s = 40 , color = 'green', label = "cluster 2", alpha=0.6)
+    ax.scatter(data[labels == 2,0],data[labels == 2,1],data[labels == 2,2], s = 40 , color = 'red', label = "cluster 3")
+    ax.set_xlabel('Rem Ratio-->')
+    ax.set_ylabel('Average Salary->')
+    ax.set_zlabel('Min Balance-->')
     ax.legend()
     plt.show()
 
@@ -556,7 +666,6 @@ def clustering_kmeans():
     district['region'] = district.apply(lambda x: get_cardinal_point(x['region']), axis=1)
     
     disp = db.df_query('SELECT * FROM disposition')
-    transactions = clean_transactions(db)
     
     df = pd.merge(clients, district, left_on="client_district_id", right_on="district_id", how="left")
     df = pd.merge(df, disp, on='client_id', how="left")
@@ -569,67 +678,87 @@ def clustering_kmeans():
     df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
 
     print("----------------------------------------")
-    print(df)
-    
-    df = encode_category(df, 'region')
 
-    #plt.scatter(df['client_id'],df['region'])
+    # rem_ration - coll ration OK
+    # rem_ration - age 
+    # average_balance - coll_ratio
+    # average_balance - cash_withdrawal_ratio
+    # max_amount - cash_withdrawal_ratio OK with average salary and age
+    # max_amount - credit_withdrawal_ratio
+    # max_amount - card_withdrawal_ratio
+    # max_amount - credit_raio
+    # avg_balance - credit_ratio - nr_ent UNA MIERDA
+    # num_trans - credit_ratio - ratio_ent
+
+    plt.scatter(df['num_trans'],df['credit_ratio'])
+    plt.show()
+    plt.clf()
+    
+    df = df[['num_trans', 'credit_ratio', 'ratio_entrepeneurs']]
+
+    scaler = MinMaxScaler()
+    x = scaler.fit_transform(df)
+
+    kmeans = KMeans(3)
+    identified_clusters = kmeans.fit_predict(x)
+    print(f'Inertia: {kmeans.inertia_}')
+
+    df.insert(loc=0, column='cluster', value=identified_clusters.tolist())
+
+    # # PCA
+    # reduced_data = PCA(n_components=3).fit_transform(df)
+    # results = pd.DataFrame(reduced_data,columns=['pca1','pca2', 'pca3'])
+
+    # fig = plt.figure(figsize=(6,6))
+    # ax = Axes3D(fig, auto_add_to_figure=False)
+    # fig.add_axes(ax)
+
+    # ax.scatter(xs=results["pca1"], ys=results["pca2"], zs=results["pca3"],s=40, marker='o', alpha=1, c=df['cluster'])
+    # plt.title('K-means Clustering with 2 dimensions')
     # plt.show()
     # plt.clf()
 
-    x = df[['average_salary', 'num_trans', 'average_balance']]
 
-    scaler = MinMaxScaler()
-    x = scaler.fit_transform(x)
 
-    kmeans = KMeans(3)
-    #kmeans.fit(x)
+    nr_clusters = []
+    inertias = []
+    scores = []
+    range_values = np.arange(2,11)
+    for k in range_values:
+        kmeans = KMeans(k)
+        kmeans.fit(x)
+        nr_clusters.append(k)
+        inertias.append(kmeans.inertia_)
+        score = metrics.silhouette_score(x, kmeans.labels_, metric='euclidean', sample_size=len(x))
+        print('Silhouette score =', score)
+        scores.append(score)
 
-    identified_clusters = kmeans.fit_predict(x)
+    plt.plot(nr_clusters, inertias)
+    plt.title('Evolution of Inertia with number of clusters')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Inertia')
+    plt.show()
+    
+    plt.figure()
+    plt.bar(range_values, scores, width=0.6, color='k', align='center')
+    plt.title('Silhouette score vs number of clusters')
+        
 
-    # x['cluster'] = pd.Series(identified_clusters, index=df.index)
-
-    # x['cluster'] = identified_clusters.tolist()
-    # # df.insert(loc=0, column='cluster', value=identified_clusters.tolist())
+    
+    # 3D
 
     fig = plt.figure(figsize = (15,15))
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(x[identified_clusters == 0,0],x[identified_clusters == 0,1],x[identified_clusters == 0,2], s = 40 , color = 'orange', label = "cluster 1", alpha=0.6)
     ax.scatter(x[identified_clusters == 1,0],x[identified_clusters == 1,1],x[identified_clusters == 1,2], s = 40 , color = 'green', label = "cluster 2", alpha=0.6)
     ax.scatter(x[identified_clusters == 2,0],x[identified_clusters == 2,1],x[identified_clusters == 2,2], s = 40 , color = 'red', label = "cluster 3", alpha=0.6)
-    ax.set_xlabel('average_salary -->')
-    ax.set_ylabel('num_trans -->')
-    ax.set_zlabel('average_balance -->')
+    ax.set_xlabel('max_amount -->')
+    ax.set_ylabel('cash withdrawal -->')
+    ax.set_zlabel('age -->')
     ax.legend()
     plt.show()
 
-    # PLOT = go.Figure()
-
-    # for C in list(x.cluster.unique()):
-        
-    #     PLOT.add_trace(go.Scatter3d(x = x[x.cluster == C]['average_salary'],
-    #                                 y = x[x.cluster == C]['num_trans'],
-    #                                 z = x[x.cluster == C]['average_balance'],
-    #                                 mode = 'markers', marker_size = 8, marker_line_width = 1,
-    #                                 name = 'Cluster ' + str(C)))
-
-
-    # PLOT.update_layout(width = 800, height = 800, autosize = True, showlegend = True,
-    #                 scene = dict(xaxis=dict(title = 'average_salary', titlefont_color = 'black'),
-    #                                 yaxis=dict(title = 'num_trans', titlefont_color = 'black'),
-    #                                 zaxis=dict(title = 'average_balance', titlefont_color = 'black')),
-    #                 font = dict(family = "Gilroy", color  = 'black', size = 12))
-
-    print(f"SCORE: { kmeans.score(x) }")
-
-    # print(identified_clusters)
-
-    # PLOT.show()
-
-    # data_with_clusters = df.copy()
-    # data_with_clusters['Clusters'] = identified_clusters 
-    # plt.scatter(data_with_clusters['client_id'], data_with_clusters['region'], c=data_with_clusters['Clusters'], cmap='rainbow')
-
 if __name__ == "__main__":
     # clean(sys.argv[1])
-    clustering_kmeans()
+    #clustering_kmeans()
+    clustering_agglomerative()
