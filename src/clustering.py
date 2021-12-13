@@ -8,6 +8,7 @@ from sklearn.metrics import silhouette_score
 from sklearn.cluster import DBSCAN
 import plotly.graph_objects as go
 from itertools import product
+import scipy.cluster.hierarchy as sch
 
 
 #######
@@ -198,7 +199,7 @@ def get_cardinal_point(region):
 # Algorithms
 ############
 
-def clustering_agglomerative():
+def clustering_agglomerative2():
     clients = clean_clients(db)
     district = clean_districts(db)
     loan = clean_loans(db)
@@ -245,6 +246,61 @@ def clustering_agglomerative():
     ax.set_zlabel('Min Balance-->')
     ax.legend()
     plt.show()
+
+def clustering_agglomerative(df, n_clusters=2, eps=0.9, min_samples=4, n_components=2):
+    
+    # Create Dendrogram
+    # dendrogram = sch.dendrogram(sch.linkage(df, method='ward'))
+    # plt.savefig('dendogram.jpg')
+    # plt.clf()
+
+    scaler = MinMaxScaler()
+    scaler.fit(df)
+    X_scale = scaler.transform(df)
+    df = pd.DataFrame(X_scale, columns=df.columns)
+
+    # Create Clusters
+    hc = AgglomerativeClustering(n_clusters=n_clusters, affinity = 'euclidean', linkage = 'ward')
+    data = df.values
+
+    # Save clusters for chart
+    hc.fit_predict(data)
+
+     # Reduce dimensionality with PCA
+    if len(df.columns) > 3:
+        # Analyse PCA
+        pca_analysis(df)
+        df_pca = pca(n_components, df)
+
+        # Plot results
+        if n_components == 2:
+            Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'))
+            trace = go.Scatter(x=df_pca.iloc[:,0], y=df_pca.iloc[:,1], mode='markers',marker=dict(color = hc.labels_, colorscale='rainbow', size = 6, line = dict(width = 0)))
+        else: 
+            Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'), zaxis= dict(title  = 'PC3'))
+            trace = go.Scatter3d(x=df_pca.iloc[:,0], y=df_pca.iloc[:,1], z=df_pca.iloc[:,2], mode='markers',marker=dict(color = hc.labels_, colorscale='rainbow', size = 6, line = dict(width = 0)))
+        layout = go.Layout(scene = Scene, height = 1000,width = 1000)
+        data = [trace]
+        fig = go.Figure(data = data, layout = layout)
+        fig.update_layout(title="Agglomerative Clusters",font=dict(size=12,))
+        fig.show()
+
+    else:
+        # Plot results
+        if len(df.columns) == 2:
+            Scene = dict(xaxis = dict(title = df.columns[0]),yaxis = dict(title  = df.columns[1]))
+            trace = go.Scatter(x=df.iloc[:,0], y=df.iloc[:,1], mode='markers',marker=dict(color = hc.labels_, colorscale='rainbow', size = 7, line = dict(width = 0)))
+        else: 
+            Scene = dict(xaxis = dict(title = df.columns[0]),yaxis = dict(title = df.columns[1]), zaxis= dict(title = df.columns[2]))
+            trace = go.Scatter3d(x=df.iloc[:,0], y=df.iloc[:,1], z=df.iloc[:,2], mode='markers',marker=dict(color = hc.labels_, colorscale='rainbow', size = 7, line = dict(width = 0)))
+        layout = go.Layout(scene = Scene, height = 1000,width = 1000)
+        data = [trace]
+        fig = go.Figure(data = data, layout = layout)
+        fig.update_layout(title="Agglomerative Clusters",font=dict(size=12,))
+        fig.show()
+
+
+
 
 def clustering_kmeans2():
 
@@ -363,7 +419,7 @@ def clustering_kmeans2():
     # ax.legend()
     # plt.show()
 
-def clustering_kmeans(df, n_clusters=3):
+def clustering_kmeans(df, n_clusters=3, n_components=2):
 
     scaler = MinMaxScaler()
     scaler.fit(df)
@@ -378,7 +434,22 @@ def clustering_kmeans(df, n_clusters=3):
 
     # Reduce dimensionality with PCA
     if len(df.columns) > 3:
-        pass
+        # Analyse PCA
+        pca_analysis(df)
+        df_pca = pca(n_components, df)
+
+        # Plot results
+        if n_components == 2:
+            Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'))
+            trace = go.Scatter(x=df_pca.iloc[:,0], y=df_pca.iloc[:,1], mode='markers',marker=dict(color = kmeans.labels_, colorscale='rainbow', size = 6, line = dict(width = 0)))
+        else: 
+            Scene = dict(xaxis = dict(title  = 'PC1'),yaxis = dict(title  = 'PC2'), zaxis= dict(title  = 'PC3'))
+            trace = go.Scatter3d(x=df_pca.iloc[:,0], y=df_pca.iloc[:,1], z=df_pca.iloc[:,2], mode='markers',marker=dict(color = kmeans.labels_, colorscale='rainbow', size = 6, line = dict(width = 0)))
+        layout = go.Layout(scene = Scene, height = 1000,width = 1000)
+        data = [trace]
+        fig = go.Figure(data = data, layout = layout)
+        fig.update_layout(title="KMeans Clusters",font=dict(size=12,))
+        fig.show()
     else:
         # Plot results
         if len(df.columns) == 2:
@@ -394,9 +465,7 @@ def clustering_kmeans(df, n_clusters=3):
         fig.show()
 
 
-
-
-def clustering_dbscan(df, eps=0.9, min_samples=4, n_components=2,):
+def clustering_dbscan(df, eps=0.9, min_samples=4, n_components=2):
 
     #scaler = StandardScaler()
     scaler = MinMaxScaler()
@@ -433,7 +502,6 @@ def clustering_dbscan(df, eps=0.9, min_samples=4, n_components=2,):
         fig = go.Figure(data = data, layout = layout)
         fig.update_layout(title="'DBSCAN Clusters Derived from PCA'", font=dict(size=12,))
         fig.show()
-    
 
     else:
         dbscan_param_tuning_silhouette(df)
@@ -468,20 +536,23 @@ def clustering_dbscan(df, eps=0.9, min_samples=4, n_components=2,):
 def clustering_economic():
 
     # Build dataframe
-    df =  merge_datasets(db, False, True)
-    df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
+    df =  merge_datasets(db)
     df = extract_features(df)
 
     #print(df.columns)
     df = df[['avg_amount_credit', 'avg_amount_withdrawal', 'average_salary']]
-
-    # df = db.df_query('SELECT AVG(balance) AS avg_balance, AVG(amount) AS avg_amount \
-    #         FROM trans_train RIGHT JOIN disposition USING(account_id) RIGHT JOIN client USING(client_id) \
-    #         GROUP BY account_id')
-    # df.fillna(0, inplace=True)
-    
     #clustering_dbscan(df, 0.2, 2)
-    clustering_kmeans(df)
+    #clustering_kmeans(df)
+    clustering_agglomerative(df)
+
+    # df = df[['avg_amount_credit', 'average_salary', 'avg_balance']]
+    # clustering_dbscan(df, 0.2, 2)
+
+    # df2 =  merge_transactions_clients(db)
+    # df2 = df2[['avg_amount_credit', 'average_salary', 'avg_amount_withdrawal', 'avg_balance']]
+    # df2.dropna(inplace=True)
+    # clustering_dbscan(df2, 0.2, 2, 2)
+
 
 
 if __name__ == "__main__":
