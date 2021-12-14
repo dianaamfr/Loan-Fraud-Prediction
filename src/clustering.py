@@ -178,7 +178,7 @@ def merge_transactions_clients(db):
     accounts = clean_accounts(db)
     district = clean_districts(db)
     disp = db.df_query('SELECT * FROM disposition')
-    transactions = clean_transactions(db)
+    transactions = clean_transactions(db, False, True)
 
     df = pd.merge(clients, disp,  on='client_id', how="left")
     df = pd.merge(df, accounts,  on='account_id', how="left")
@@ -536,26 +536,46 @@ def clustering_dbscan(df, eps=0.9, min_samples=4, n_components=2):
 def clustering_economic():
 
     # Build dataframe
-    df =  merge_datasets(db)
+    df =  merge_datasets(db,False, True)
+    df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
     df = extract_features(df)
 
-    #print(df.columns)
-    df = df[['avg_amount_credit', 'avg_amount_withdrawal', 'average_salary']]
+    print(df.columns)
+    #df = df[['avg_amount_credit', 'avg_amount_withdrawal', 'average_salary']]
     #clustering_dbscan(df, 0.2, 2)
     #clustering_kmeans(df)
-    clustering_agglomerative(df)
+    #clustering_agglomerative(df)
 
-    # df = df[['avg_amount_credit', 'average_salary', 'avg_balance']]
-    # clustering_dbscan(df, 0.2, 2)
+    df = df[['avg_amount_credit', 'average_salary', 'avg_balance']]
+    clustering_dbscan(df, 0.2, 2)
 
     # df2 =  merge_transactions_clients(db)
     # df2 = df2[['avg_amount_credit', 'average_salary', 'avg_amount_withdrawal', 'avg_balance']]
     # df2.dropna(inplace=True)
     # clustering_dbscan(df2, 0.2, 2, 2)
 
+    # df = df[['num_rem', 'mean_rem', 'amount']]
+    #df = df[['avg_amount_credit', 'age', 'num_trans']]
+    #clustering_dbscan(df, 0.2, 2)
+    #clustering_kmeans(df)
 
+def clustering_demographic():
+    # Build dataframe
+    df =  merge_datasets(db,False, True)
+    df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
+    df = extract_features(df)
+    print(df.columns)
+    # df = df[['nr_municip_inhabitants_2000_9999', 'avg_crimes', 'ratio_entrepeneurs']]
+    #df = df[['ratio_entrepeneurs', 'ratio_urban_inhabitants', 'unemployment_growth']]
+    #clustering_kmeans(df)
+
+    df2 =  merge_transactions_clients(db)
+    df2 = df[[ 'nr_municip_inhabitants_499', 'nr_municip_inhabitants_2000_9999', 'average_salary']]
+    df2.dropna(inplace=True)
+    clustering_kmeans(df2)
 
 if __name__ == "__main__":
-    #clustering_kmeans()
-    #clustering_agglomerative()
-    clustering_economic()
+    #clustering_kmeans2()
+    #clustering_agglomerative2()
+    #clustering_economic()
+    clustering_demographic()
