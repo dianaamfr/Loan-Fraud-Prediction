@@ -1,12 +1,11 @@
 import pandas as pd
 import numpy as np
+from pandas.io.formats.format import DataFrameFormatter
 from sklearn import preprocessing
-import datetime
-from datetime import date
+from datetime import datetime, date
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
@@ -73,7 +72,12 @@ def split_birth(birth_number):
 
     return gender, birth_date
 
-def calculate_age(birth_date, loan_date):
+def calculate_age(birth_date):
+    today = datetime.now()
+    age = (today - birth_date).days // 365
+    return age
+
+def calculate_age_loan(birth_date, loan_date):
     frame = { 'birth': birth_date, 'granted': loan_date }
     dates = pd.DataFrame(frame)
 
@@ -81,8 +85,7 @@ def calculate_age(birth_date, loan_date):
     dates['granted'] = pd.to_datetime(dates['granted'], format='%Y-%m-%d')
     dates['difference'] = (dates['granted'] - dates['birth']).dt.days // 365
 
-    return dates['difference'] 
-
+    return dates['difference']
 
 def transform_status(df):
     # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
@@ -96,7 +99,7 @@ def transform_status(df):
 
 def clean_loans(db, test=False):
     table = 'loan_test' if test is True else 'loan_train'
-    df = db.df_query('SELECT * FROM ' + table)
+    df = db.df_query('SELECT loan_id, granted_date, amount, payments, loan_status, account_id FROM ' + table)
 
     # Format loan date
     df = format_date(df, 'granted_date')
@@ -135,8 +138,7 @@ def clean_clients(db):
 
     # Gender and Date of birth
     df['gender'], df['birth_date'] = zip(*df['birth_number'].map(split_birth))
-    df.drop(columns=['birth_number'], inplace=True)
-
+    
     df.rename(columns={'district_id': 'client_district_id'}, inplace=True)
     return df
 
@@ -193,7 +195,7 @@ def clean_districts(db):
     
     return df
 
-def clean_transactions(db, test=False):
+def clean_transactions(db, test=False, op=False, k_symbol=False):
     table = 'trans_test' if test is True else 'trans_train'
     df = db.df_query('SELECT * FROM ' + table)
 
@@ -294,84 +296,86 @@ def clean_transactions(db, test=False):
     ###########
     # Operation
     ###########
-    operation_amount = df_copy.groupby(['account_id', 'operation']).agg({'amount': ['mean', 'count']}).reset_index()
-    operation_amount.columns = ['account_id', 'operation', 'operation_amount_mean', 'operation_amount_count']
-    
-    # credit in cash = CashC
-    cashC_operation = operation_amount[operation_amount['operation'] == 'CashC']
-    cashC_operation.columns = ['account_id', 'operation', 'mean_cash_credit', 'num_cash_credit']
-    cashC_operation = cashC_operation.drop(['operation'], axis=1)
+    if op:
+        operation_amount = df_copy.groupby(['account_id', 'operation']).agg({'amount': ['mean', 'count']}).reset_index()
+        operation_amount.columns = ['account_id', 'operation', 'operation_amount_mean', 'operation_amount_count']
+        
+        # credit in cash = CashC
+        cashC_operation = operation_amount[operation_amount['operation'] == 'CashC']
+        cashC_operation.columns = ['account_id', 'operation', 'mean_cash_credit', 'num_cash_credit']
+        cashC_operation = cashC_operation.drop(['operation'], axis=1)
 
-    # collection from another bank = Coll
-    coll_operation = operation_amount[operation_amount['operation'] == 'Coll']
-    coll_operation.columns = ['account_id', 'operation', 'mean_coll', 'num_coll']
-    coll_operation = coll_operation.drop(['operation'], axis=1)
+        # collection from another bank = Coll
+        coll_operation = operation_amount[operation_amount['operation'] == 'Coll']
+        coll_operation.columns = ['account_id', 'operation', 'mean_coll', 'num_coll']
+        coll_operation = coll_operation.drop(['operation'], axis=1)
 
-    # interest credited = Interest,
-    interest_operation = operation_amount[operation_amount['operation'] == 'Interest']
-    interest_operation.columns = ['account_id', 'operation', 'mean_interest', 'num_interest']
-    interest_operation = interest_operation.drop(['operation'], axis=1)
+        # interest credited = Interest,
+        interest_operation = operation_amount[operation_amount['operation'] == 'Interest']
+        interest_operation.columns = ['account_id', 'operation', 'mean_interest', 'num_interest']
+        interest_operation = interest_operation.drop(['operation'], axis=1)
 
-    # withdrawal in cash = CashW
-    cashW_operation = operation_amount[operation_amount['operation'] == 'CashW']
-    cashW_operation.columns = ['account_id', 'operation', 'mean_cash_withdrawal', 'num_cash_withdrawal']
-    cashW_operation = cashW_operation.drop(['operation'], axis=1)
+        # withdrawal in cash = CashW
+        cashW_operation = operation_amount[operation_amount['operation'] == 'CashW']
+        cashW_operation.columns = ['account_id', 'operation', 'mean_cash_withdrawal', 'num_cash_withdrawal']
+        cashW_operation = cashW_operation.drop(['operation'], axis=1)
 
-    # remittance to another bank = Rem
-    rem_operation = operation_amount[operation_amount['operation'] == 'Rem']
-    rem_operation.columns = ['account_id', 'operation', 'mean_rem', 'num_rem']
-    rem_operation = rem_operation.drop(['operation'], axis=1)
+        # remittance to another bank = Rem
+        rem_operation = operation_amount[operation_amount['operation'] == 'Rem']
+        rem_operation.columns = ['account_id', 'operation', 'mean_rem', 'num_rem']
+        rem_operation = rem_operation.drop(['operation'], axis=1)
 
-    # credit card withdrawal = CardW
-    cardW_operation = operation_amount[operation_amount['operation'] == 'CardW']
-    cardW_operation.columns = ['account_id', 'operation', 'mean_card_withdrawal', 'num_card_withdrawal']
-    cardW_operation = cardW_operation.drop(['operation'], axis=1)
-    
-    operation_amount_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
-    operation_amount_df = operation_amount_df.merge(interest_operation, on='account_id',how='outer')
-    operation_amount_df = operation_amount_df.merge(cashW_operation, on='account_id',how='outer')
-    operation_amount_df = operation_amount_df.merge(rem_operation, on='account_id',how='outer')
-    operation_amount_df = operation_amount_df.merge(cardW_operation, on='account_id',how='outer')
-    operation_amount_df.fillna(0, inplace=True)
-    
-    new_df = pd.merge(new_df, operation_amount_df, on="account_id", how="outer")
+        # credit card withdrawal = CardW
+        cardW_operation = operation_amount[operation_amount['operation'] == 'CardW']
+        cardW_operation.columns = ['account_id', 'operation', 'mean_card_withdrawal', 'num_card_withdrawal']
+        cardW_operation = cardW_operation.drop(['operation'], axis=1)
+        
+        operation_amount_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
+        operation_amount_df = operation_amount_df.merge(interest_operation, on='account_id',how='outer')
+        operation_amount_df = operation_amount_df.merge(cashW_operation, on='account_id',how='outer')
+        operation_amount_df = operation_amount_df.merge(rem_operation, on='account_id',how='outer')
+        operation_amount_df = operation_amount_df.merge(cardW_operation, on='account_id',how='outer')
+        operation_amount_df.fillna(0, inplace=True)
+        
+        new_df = pd.merge(new_df, operation_amount_df, on="account_id", how="outer")
 
     # K-Symbol
-    symbol_amount = df_copy.groupby(['account_id', 'k_symbol']).agg({'amount': ['mean', 'count']}).reset_index()
-    symbol_amount.columns = ['account_id', 'k_symbol', 'symbol_amount_mean', 'symbol_amount_count']
+    if k_symbol:
+        symbol_amount = df_copy.groupby(['account_id', 'k_symbol']).agg({'amount': ['mean', 'count']}).reset_index()
+        symbol_amount.columns = ['account_id', 'k_symbol', 'symbol_amount_mean', 'symbol_amount_count']
 
-    no_symbol = symbol_amount[symbol_amount['k_symbol'] == 'None']
-    no_symbol.columns = ['account_id', 'k_symbol', 'mean_no_symbol', 'num_no_symbol']
-    no_symbol = no_symbol.drop(['k_symbol'], axis=1)
+        no_symbol = symbol_amount[symbol_amount['k_symbol'] == 'None']
+        no_symbol.columns = ['account_id', 'k_symbol', 'mean_no_symbol', 'num_no_symbol']
+        no_symbol = no_symbol.drop(['k_symbol'], axis=1)
 
-    household_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Household']
-    household_symbol.columns = ['account_id', 'k_symbol', 'mean_household', 'num_household']
-    household_symbol = household_symbol.drop(['k_symbol'], axis=1)
-    
-    statement_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Statement']
-    statement_symbol.columns = ['account_id', 'k_symbol', 'mean_statement', 'num_statement']
-    statement_symbol = statement_symbol.drop(['k_symbol'], axis=1)
+        household_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Household']
+        household_symbol.columns = ['account_id', 'k_symbol', 'mean_household', 'num_household']
+        household_symbol = household_symbol.drop(['k_symbol'], axis=1)
+        
+        statement_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Statement']
+        statement_symbol.columns = ['account_id', 'k_symbol', 'mean_statement', 'num_statement']
+        statement_symbol = statement_symbol.drop(['k_symbol'], axis=1)
 
-    insurance_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Insurance']
-    insurance_symbol.columns = ['account_id', 'k_symbol', 'mean_insurance', 'num_insurance']
-    insurance_symbol = insurance_symbol.drop(['k_symbol'], axis=1)
+        insurance_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Insurance']
+        insurance_symbol.columns = ['account_id', 'k_symbol', 'mean_insurance', 'num_insurance']
+        insurance_symbol = insurance_symbol.drop(['k_symbol'], axis=1)
 
-    sanction_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Sanction']
-    sanction_symbol.columns = ['account_id', 'k_symbol', 'mean_sanction', 'num_sanction']
-    sanction_symbol = sanction_symbol.drop(['k_symbol'], axis=1)
+        sanction_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Sanction']
+        sanction_symbol.columns = ['account_id', 'k_symbol', 'mean_sanction', 'num_sanction']
+        sanction_symbol = sanction_symbol.drop(['k_symbol'], axis=1)
 
-    pension_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Pension']
-    pension_symbol.columns = ['account_id', 'k_symbol', 'mean_pension', 'num_pension']
-    pension_symbol = pension_symbol.drop(['k_symbol'], axis=1)
+        pension_symbol = symbol_amount[symbol_amount['k_symbol'] == 'Pension']
+        pension_symbol.columns = ['account_id', 'k_symbol', 'mean_pension', 'num_pension']
+        pension_symbol = pension_symbol.drop(['k_symbol'], axis=1)
 
-    symbol_amount_df = no_symbol.merge(household_symbol, on='account_id',how='outer')
-    symbol_amount_df = symbol_amount_df.merge(statement_symbol, on='account_id',how='outer')
-    symbol_amount_df = symbol_amount_df.merge(insurance_symbol, on='account_id',how='outer')
-    symbol_amount_df = symbol_amount_df.merge(sanction_symbol, on='account_id',how='outer')
-    symbol_amount_df = symbol_amount_df.merge(pension_symbol, on='account_id',how='outer')
-    symbol_amount_df.fillna(0, inplace=True)
+        symbol_amount_df = no_symbol.merge(household_symbol, on='account_id',how='outer')
+        symbol_amount_df = symbol_amount_df.merge(statement_symbol, on='account_id',how='outer')
+        symbol_amount_df = symbol_amount_df.merge(insurance_symbol, on='account_id',how='outer')
+        symbol_amount_df = symbol_amount_df.merge(sanction_symbol, on='account_id',how='outer')
+        symbol_amount_df = symbol_amount_df.merge(pension_symbol, on='account_id',how='outer')
+        symbol_amount_df.fillna(0, inplace=True)
 
-    new_df = pd.merge(new_df, symbol_amount_df, on="account_id", how="outer")
+        new_df = pd.merge(new_df, symbol_amount_df, on="account_id", how="outer")
 
     return new_df
 
@@ -390,13 +394,13 @@ def clean_cards(db, test=False):
 # Merge
 #########
 
-def merge_datasets(db, test=False):
+def merge_datasets(db, test=False, op=False, k_symbol=False):
     loan = clean_loans(db, test)
     account = clean_accounts(db)
     disp = clean_disp(db)
     client = clean_clients(db)
     district = clean_districts(db)
-    transaction = clean_transactions(db, test)
+    transaction = clean_transactions(db, test, op, k_symbol)
     cards = clean_cards(db, test)
     
     df = pd.merge(loan, account, on='account_id', how="left")
@@ -407,12 +411,14 @@ def merge_datasets(db, test=False):
     df = pd.merge(df, transaction, how="left", on="account_id")
     df = pd.merge(df, cards, how="left", on="account_id")
 
+    df.drop(columns=['birth_number'], inplace=True)
+    
     return df
 
 def extract_features(df):
 
     # Age when the loan was requested
-    df['age_when_loan'] = calculate_age(df['birth_date'], df['granted_date'])
+    df['age_when_loan'] = calculate_age_loan(df['birth_date'], df['granted_date'])
     df.drop(columns=['birth_date'], inplace=True)
 
     # Days between loan and account creation
@@ -480,8 +486,9 @@ def clean(output_name):
 
     df_test = df_test.set_index('loan_id')
 
-    df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
+    print(df_test.columns)
 
+    df_test.to_csv('clean_data/' + output_name + '-test.csv', index=True)
 
 if __name__ == "__main__":
     clean(sys.argv[1])
