@@ -66,15 +66,17 @@ def card_type_status():
 
     fig, ax = plt.subplots(figsize=(16, 6))
 
+    x_ticks = [str(col) for col in df['card_type'].value_counts().index]
+
     plt.bar(x_axis - 0.2, df_good_count['total']/len(df_good['loan_status']), 0.4, label = 'status 1', color='green', alpha=0.6)
     plt.bar(x_axis + 0.2, df_bad_count['total']/len(df_bad['loan_status']), 0.4, label = 'status -1', color='red', alpha=0.6)
 
-    plt.xticks(x_axis, df['card_type'].unique())
+    plt.xticks(x_axis, x_ticks)
     plt.xlabel("type", labelpad=10)
     plt.ylabel("count", labelpad=10)
     plt.title("Card Type Count")
     plt.legend()
-     
+    
     ax.yaxis.set_major_formatter(PercentFormatter(1))
 
     plt.savefig(get_correlation_folder('card')/'card_type_status.jpg')
