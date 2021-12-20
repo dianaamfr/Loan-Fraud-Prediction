@@ -149,17 +149,16 @@ def clean_districts(db):
     df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
     df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
     
-    # Replace nr of crimes and unemployment missing values by median
-    # TODO: maybe try to extract the equation of the relations between 96 and 95 and use it instead
-    median_nr_crimes_95 = df["nr_commited_crimes_95"].median(skipna=True)
-    median_unemployment_rate_95 = df["unemployment_rate_95"].median(skipna=True)
+    # median_nr_crimes_95 = df["nr_commited_crimes_95"].median(skipna=True)
+    # median_unemployment_rate_95 = df["unemployment_rate_95"].median(skipna=True)
     # mean_nr_crimes_95 = df["nr_commited_crimes_95"].mean(skipna=True)
     # mean_unemployment_rate_95 = df["unemployment_rate_95"].mean(skipna=True)
 
+    # Replace nr of crimes and unemployment missing values by median
     # df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
     # df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
     
-    # Fill the missing values with the mean
+    # Replace nr of crimes and unemployment missing values by mean
     # df["nr_commited_crimes_95"].fillna(mean_nr_crimes_95, inplace=True)
     # df["unemployment_rate_95"].fillna(mean_unemployment_rate_95, inplace=True)
 
@@ -170,7 +169,7 @@ def clean_districts(db):
     # FEATURE EXTRACTION
 
     # Entrepeneurs Ratio
-    df['ratio_entrepeneurs'] = df['nr_enterpreneurs_1000_inhabitants'] / 1000
+    df['ratio_entrepreneurs'] = df['nr_enterpreneurs_1000_inhabitants'] / 1000
 
     # Average Crimes
     df["avg_crimes"] = df[['nr_commited_crimes_95', 'nr_commited_crimes_96']].mean(axis=1) / df["nr_inhabitants"]

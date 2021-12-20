@@ -1,4 +1,3 @@
-from functools import reduce
 import sys
 from statsmodels.graphics.gofplots import qqplot
 from scipy.stats import norm
@@ -33,7 +32,9 @@ def district_du():
 
 def district_distribution(df):
     # Region
+    plt.figure(figsize=(16, 7))
     sns.countplot(x ='region', data = df)
+    plt.tight_layout()
     plt.savefig(get_distribution_folder('district')/'region.jpg')
     plt.clf()
 

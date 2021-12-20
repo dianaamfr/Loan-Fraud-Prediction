@@ -3,7 +3,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils import *
-from pathlib import Path
 import sys
 from matplotlib.ticker import PercentFormatter
 
@@ -119,7 +118,6 @@ def days_between_account_loan():
     plt.savefig(get_correlation_folder('account')/'loan_account_dates.jpg')
     plt.clf()
 
-# Dates of the loans issuance # TODO -> Meter só os anos ; O gráfico tem algum valor?
 def date_loan_issued():
     df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
 
@@ -151,7 +149,6 @@ def date_loan_issued():
     plt.savefig(get_correlation_folder('account')/'loan_issuance_dates.jpg')
     plt.clf()
 
-# Dates of the accounts creation # TODO -> Meter só os anos ; O gráfico tem algum valor?
 def date_account_creation():
     df = db.df_query('SELECT * FROM loan_train JOIN account USING(account_id)')
 
