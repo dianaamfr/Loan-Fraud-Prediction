@@ -53,7 +53,7 @@ def get_classifier(classifier):
     elif classifier == 'neural_network':
         return MLPClassifier(random_state=RS)
     elif classifier == 'xgboost':
-        return XGBClassifier(use_label_encoder=False, eval_metric='rmse')
+        return XGBClassifier(use_label_encoder=False, eval_metric='auc')
     elif classifier == 'bagging':
         return BaggingClassifier(get_classifier(BASE_ESTIMATOR))
 
@@ -61,11 +61,11 @@ def get_grid_params(classifier):
     if classifier == 'decision_tree':
         return {'criterion': ['gini', 'entropy'],
                 'splitter': ['best', 'random'],
-                'max_depth': [3,5,7],
+                'max_depth': [3,5,7,10],
                 'min_samples_split': [1,2,3],
                 'min_samples_leaf': [1,2,3],
                 'min_weight_fraction_leaf': [0.0],
-                'max_features': [None, 'auto', 'sqrt', 'log2', 12],
+                'max_features': [None, 'auto', 'sqrt', 'log2', 12, 15],
                 'max_leaf_nodes': [None],
                 'min_impurity_decrease': [0.0],
                 'class_weight': [None],
@@ -125,13 +125,15 @@ def get_grid_params(classifier):
           'early_stopping':[False, True]}
         
     elif classifier == 'xgboost':
-        return {'booster': ['gbtree', 'gblinear', 'dart']}
+        return {'min_child_weight':range(1,6,2),
+                'gamma': [0,0.5,1,1.5],
+                'max_depth': [5, 14, 30],
+                'reg_alpha':[1e-5, 1e-2, 0.1, 1]}
 
     
 def get_classifier_best(classifier):
     if classifier == 'decision_tree':
-        # return DecisionTreeClassifier(criterion='entropy', splitter='random')
-        return DecisionTreeClassifier()
+        return DecisionTreeClassifier(criterion='entropy', max_features='auto', max_depth=10, min_samples_leaf=3)
     elif classifier == 'logistic_regression':
         return LogisticRegression(C = 0.1, class_weight= 'balanced', penalty= 'l2', solver= 'saga', max_iter=200)
     elif classifier == 'random_forest':
@@ -145,7 +147,9 @@ def get_classifier_best(classifier):
     elif classifier == 'neural_network':
         return MLPClassifier(activation='tanh', hidden_layer_sizes= (3, 5, 8, 13, 21, 34), solver='lbfgs', max_iter=300)
     elif classifier == 'xgboost':
-        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, max_depth= 30, min_child_weight= 1, subsample= 1.0, use_label_encoder=False, eval_metric='rmse')
+        return XGBClassifier(colsample_bytree=0.8, gamma= 1.5, 
+                    max_depth= 30, min_child_weight= 1, subsample= 1.0,
+                    use_label_encoder=False, eval_metric='auc')
     elif classifier == 'bagging':
         return BaggingClassifier(get_classifier_best(BASE_ESTIMATOR), random_state=RS, n_jobs=-1)
 

@@ -1,4 +1,5 @@
 import sys
+import graphviz
 import joblib
 import pandas as pd
 import numpy as np
@@ -15,6 +16,7 @@ from statistics import mean
 from utils import *
 from feature_selection import *
 from xgboost import plot_tree
+from sklearn import tree
 
 DEBUG = False
 CROSS_VALIDATION = True
@@ -151,7 +153,19 @@ def cross_validation(X, y, classifier, kf, num_splits):
         plot_tree(classifier, fontsize=6)
         plt.savefig('models/tree.jpg', dpi=400)
         plt.clf()
-  
+    elif classifier_name == 'DecisionTreeClassifier': 
+        fn=X.columns.tolist()
+        cn=['default', 'paid']
+        
+        dot_data = tree.export_graphviz(classifier, 
+            out_file=None, 
+            feature_names=fn,  
+            class_names=cn,
+            filled=True)
+
+        graph = graphviz.Source(dot_data, format="png") 
+        graph.render("models/decision_tree")
+        
     print('AUC Train scores of each fold - {}'.format(auc_train_scores))
     print('AUC Test scores of each fold - {}'.format(auc_test_scores))
 
@@ -199,17 +213,17 @@ def grid_search(classifier_name, submission_name):
 
     scaler = MinMaxScaler()
     df = normalize_if_not_tree_based(df, classifier_name, scaler)
-    normalized_df = normalize(df, scaler)
+    #normalized_df = normalize(df, scaler)
 
     X = df.drop(columns=['loan_status'])
     y = df['loan_status']
-    X_normalized = normalized_df.drop(columns=['loan_status'])
-    y_normalized = normalized_df['loan_status']
+    # X_normalized = normalized_df.drop(columns=['loan_status'])
+    # y_normalized = normalized_df['loan_status']
 
     # Apply SMOTE on imbalanced dataset
     oversample = SMOTE(random_state=RS)
     X, y = oversample.fit_resample(X, y)
-    X_normalized, y_normalized = oversample.fit_resample(X_normalized, y_normalized)
+    # X_normalized, y_normalized = oversample.fit_resample(X_normalized, y_normalized)
 
     # Get classifier
     classifier = get_classifier(classifier_name)
@@ -222,7 +236,7 @@ def grid_search(classifier_name, submission_name):
     # X = recursive_cv_feature_selection(X, y, classifier, kf)
     # X = recursive_feature_selection(X, y, classifier)
     X = filter_feature_selection(X, y)
-    X_normalized = filter_feature_selection(X_normalized, y_normalized)
+    # X_normalized = filter_feature_selection(X_normalized, y_normalized)
     # X = extra_tree_feature_selection(X,y)
 
     params = get_grid_params(classifier_name)
@@ -235,7 +249,7 @@ def grid_search(classifier_name, submission_name):
 
     grid_results = grid_search_var.fit(X, y)
 
-    compare_classifiers(kf, X, y, X_normalized, y_normalized)
+    #compare_classifiers(kf, X, y, X_normalized, y_normalized)
 
     print('Best Parameters: ', grid_results.best_params_)
     print('Best Score: ', grid_results.best_score_)
