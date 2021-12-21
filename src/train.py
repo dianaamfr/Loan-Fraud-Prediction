@@ -154,8 +154,8 @@ def cross_validation(X, y, classifier, kf, num_splits):
         plt.savefig('models/tree.jpg', dpi=400)
         plt.clf()
     elif classifier_name == 'DecisionTreeClassifier': 
-        fn=X.columns.tolist()
-        cn=['default', 'paid']
+        fn = X.columns.tolist()
+        cn=['paid', 'default']
         
         dot_data = tree.export_graphviz(classifier, 
             out_file=None, 
