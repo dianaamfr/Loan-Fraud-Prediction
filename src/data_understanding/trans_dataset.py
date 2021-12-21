@@ -52,10 +52,13 @@ def trans_test_du():
     plt.clf()
 
     sns.countplot(x ='k_symbol', data = trans_test_df)
+    plt.figure(figsize=(16, 7))
+    plt.tight_layout()
     plt.savefig(get_distribution_folder('trans')/'trans_test_k_symbol.jpg')
     plt.clf()
 
     sns.countplot(x ='bank', data = trans_test_df)
+    plt.title('Banks of the partners of the transactions')
     plt.savefig(get_distribution_folder('trans')/'trans_test_bank.jpg')
     plt.clf()
 
@@ -113,6 +116,7 @@ def trans_train_du():
     plt.clf()
     
     sns.countplot(x ='bank', data = trans_train_df)
+    plt.title('Banks of the partners of the transactions')
     plt.savefig(get_distribution_folder('trans')/'trans_train_bank.jpg')
     plt.clf()
 
@@ -142,6 +146,9 @@ def num_trans_status():
    
     df_bad.num_trans.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
      weights=np.ones(len(df_bad.num_trans)) / len(df_bad.num_trans))
+
+    ax1.set_xlim([0,200])
+    ax2.set_xlim([0,200])
 
     ax1.set_ylim([0,0.16])
     ax2.set_ylim([0,0.16])
@@ -273,17 +280,11 @@ def last_balance_loan():
     df = db.df_query('SELECT * FROM trans_train')
     df_loan = db.df_query('SELECT account_id,amount FROM loan_train')
     
-    # transação mais recente feita
+    # Most recent transaction
     df_trans = db.df_query('SELECT account_id, MAX(trans_date) AS trans_date FROM trans_train GROUP BY account_id')
-   
-    # visualização melhor das datas
-    #for index, row in df_trans.iterrows():
-    #    df_trans["trans_date"][index] = datetime(int("19"+str(df_trans["trans_date"][index])[0:2]),int(str(df_trans["trans_date"][index])[2:4]),int(str(df_trans["trans_date"][index])[4:6]))
 
     df_trans2 = pd.merge(df_trans, df, how="inner",on=['account_id','trans_date'])
     df_merged =pd.merge(df_trans2, df_loan, how="inner",on=['account_id'])
-
-    print(df_merged)
 
     x = df_merged["balance"]
     y = df_merged["amount_y"]

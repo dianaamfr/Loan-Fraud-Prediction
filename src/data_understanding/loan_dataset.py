@@ -99,8 +99,8 @@ def loan_test_distribution(df):
 
 def loan_train_correlation(df):
     
-    #Correlation Matrix
-    fig, ax = plt.subplots(figsize=(20, 15))
+    # Correlation Matrix
+    _, ax = plt.subplots(figsize=(15, 15))
     sns.heatmap(
             df.corr(), 
             cmap = sns.diverging_palette(220, 10, as_cmap = True),
@@ -137,13 +137,16 @@ def loan_amount_status(df):
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
      weights=np.ones(len(df_good.amount)) / len(df_good.amount))
 
     df_bad.amount.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
      weights=np.ones(len(df_bad.amount)) / len(df_bad.amount))
+
+    ax1.set_xlim([0,550000])
+    ax2.set_xlim([0,550000])
 
     ax1.set_ylim([0,0.16])
     ax2.set_ylim([0,0.16])
@@ -163,7 +166,7 @@ def loan_duration_status(df):
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.duration.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
      weights=np.ones(len(df_good.duration)) / len(df_good.duration))
@@ -189,13 +192,19 @@ def loan_payments_status(df):
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.payments.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
      weights=np.ones(len(df_good.payments)) / len(df_good.payments))
 
     df_bad.payments.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
      weights=np.ones(len(df_bad.payments)) / len(df_bad.payments))
+
+    ax1.set_xlim([0,10000])
+    ax2.set_xlim([0,10000])
+
+    ax1.set_ylim([0,0.11])
+    ax2.set_ylim([0,0.11])
 
     ax1.set_title('Good Loan Payments')
     ax2.set_title('Bad Loan Payments')
@@ -215,13 +224,13 @@ def client_age_on_loan():
     df_client = db.df_query('SELECT * FROM client')
 
     
-    # relacionar disp with account and client
+    # relate disposition with account and client
     merged_df = pd.merge(df_disp, df_client, how="inner",on="client_id")
     merged_df = pd.merge(merged_df, df_account, how="inner",on="account_id")
     merged_df = pd.merge(merged_df, df_loan, how="inner",on="account_id")
 
-    for index, row in merged_df.iterrows(): 
-        #birthDate
+    for index, _ in merged_df.iterrows():
+        #birth_date
         birth_str = str(merged_df['birth_number'][index])
         if int(birth_str[2:4]) < 50:
            merged_df['birth_number'][index] =datetime(int("19"+birth_str[0:2]),int(birth_str[2:4]),int(birth_str[4:6]))
@@ -257,7 +266,7 @@ def client_gender_status():
     df_disp = db.df_query('SELECT * FROM disposition')
     df_client = db.df_query('SELECT * FROM client')
 
-    # relacionar disp with account and client
+    # relate disposition with account and client
     merged_df = pd.merge(df_disp, df_client, how="inner",on="client_id")
     merged_df = pd.merge(merged_df, df_account, how="inner",on="account_id")
     merged_df = pd.merge(merged_df, df_loan, how="inner",on="account_id")
@@ -273,6 +282,5 @@ if __name__ == '__main__':
     print("### LOAN TRAIN ###")
     loan_train_du()
     print()
-    # print("### LOAN TEST ###")
-    # loan_test_du()
-    
+    print("### LOAN TEST ###")
+    loan_test_du()
