@@ -186,10 +186,10 @@ CREATE TABLE IF NOT EXISTS trans_train (
     account_id INT,
     trans_date INT,
     trans_type VARCHAR(20),
-    operation VARCHAR(20),
+    operation VARCHAR(50),
     amount FLOAT,
     balance FLOAT,
-    k_symbol VARCHAR(20),
+    k_symbol VARCHAR(50),
     bank VARCHAR(20),
     account INT
 );
@@ -210,10 +210,10 @@ CREATE TABLE trans_test (
     account_id INT NOT NULL,
     trans_date INT NOT NULL,
     trans_type VARCHAR(20) NOT NULL,
-    operation VARCHAR(20),
+    operation VARCHAR(50),
     amount INT NOT NULL,
     balance INT NOT NULL,
-    k_symbol VARCHAR(20),
+    k_symbol VARCHAR(50),
     bank VARCHAR(20),
     account INT
 );

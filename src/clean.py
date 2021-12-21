@@ -206,19 +206,19 @@ def clean_transactions(db, test=False, op=False, k_symbol=False):
     # Operation Nan and rename
     df["operation"].fillna("interest credited", inplace=True)
     df.loc[df["operation"]=="credit in cash", "operation"] = "CashC"
-    df.loc[df["operation"]=="collection from anot", "operation"] = "Coll"
+    df.loc[df["operation"]=="collection from another bank", "operation"] = "Coll"
     df.loc[df["operation"]=="interest credited", "operation"] = "Interest"
     df.loc[df["operation"]=="withdrawal in cash", "operation"] = "CashW"
-    df.loc[df["operation"]=="remittance to anothe", "operation"] = "Rem"
-    df.loc[df["operation"]=="credit card withdraw", "operation"] = "CardW"
+    df.loc[df["operation"]=="remittance to another bank", "operation"] = "Rem"
+    df.loc[df["operation"]=="credit card withdrawal", "operation"] = "CardW"
 
     # K_symbol Nan and rename
     df["k_symbol"].fillna("None", inplace=True)
     df.loc[df["k_symbol"]=="insurrance payment", "k_symbol"] = "Insurance"
     df.loc[df["k_symbol"]=="interest credited", "k_symbol"] = "Interest"
     df.loc[df["k_symbol"]=="household", "k_symbol"] = "Household"
-    df.loc[df["k_symbol"]=="payment for statemen", "k_symbol"] = "Statement"
-    df.loc[df["k_symbol"]=="sanction interest if", "k_symbol"] = "Sanction"
+    df.loc[df["k_symbol"]=="payment for statement", "k_symbol"] = "Statement"
+    df.loc[df["k_symbol"]=="sanction interest if negative balance", "k_symbol"] = "Sanction"
     df.loc[df["k_symbol"]=="old-age pension", "k_symbol"] = "Pension"
 
     # TYPE & AMOUNT
