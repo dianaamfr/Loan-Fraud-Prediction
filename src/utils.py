@@ -152,4 +152,3 @@ def get_classifier_best(classifier):
                     use_label_encoder=False, eval_metric='auc')
     elif classifier == 'bagging':
         return BaggingClassifier(get_classifier_best(BASE_ESTIMATOR), random_state=RS, n_jobs=-1)
-

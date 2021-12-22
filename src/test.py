@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 from pathlib import Path
 import pickle
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from utils import *
 
 def test(classifier_name, submission_name):

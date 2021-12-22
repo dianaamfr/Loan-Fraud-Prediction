@@ -1,16 +1,13 @@
 import pandas as pd
 import numpy as np
-from pandas.io.formats.format import DataFrameFormatter
 from sklearn import preprocessing
-from datetime import datetime, date
+from datetime import datetime
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
-
-#pd.set_option('display.max_columns', None)
 
 #############
 # Correlation
@@ -257,7 +254,7 @@ def clean_transactions(db, test=False, op=False, k_symbol=False):
     trans_type_count_df = pd.merge(credit_counts, withdrawal_counts, on="account_id", how="outer")
     trans_type_count_df.fillna(0, inplace=True)
     trans_type_count_df['credit_ratio'] = trans_type_count_df['num_credits'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
-    #trans_type_count_df['withdrawal_ratio'] = trans_type_count_df['num_withdrawals'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
+    # trans_type_count_df['withdrawal_ratio'] = trans_type_count_df['num_withdrawals'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
 
     trans_type_count_df.drop(columns=['num_credits', 'num_withdrawals'], inplace=True)
     new_df = pd.merge(new_df, trans_type_count_df, on="account_id", how="outer")
@@ -267,7 +264,7 @@ def clean_transactions(db, test=False, op=False, k_symbol=False):
             ' MIN(balance) AS min_balance, STDDEV(balance) AS std_balance '\
             'FROM ' + table + ' GROUP BY account_id')
     balance_count_df['negative_balance'] = balance_count_df['min_balance'] < 0
-    #balance_count_df.drop(columns=['min_balance'], inplace=True)
+    # balance_count_df.drop(columns=['min_balance'], inplace=True)
     balance_count_df = encode_category(balance_count_df, 'negative_balance')
 
     # Last Transaction
@@ -408,7 +405,6 @@ def merge_datasets(db, test=False, op=False, k_symbol=False):
     df = pd.merge(loan, account, on='account_id', how="left")
     df = pd.merge(df, disp,  on='account_id', how="left")
     df = pd.merge(df, client,  on='client_id', how="left")
-    # TODO - fazer 2 gráficos para escolher os dados do district relativos à account ou ao cliente
     df = pd.merge(df, district, left_on='client_district_id', right_on='district_id')
     df = pd.merge(df, transaction, how="left", on="account_id")
     df = pd.merge(df, cards, how="left", on="account_id")

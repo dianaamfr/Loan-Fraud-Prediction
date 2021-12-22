@@ -3,9 +3,8 @@ import pandas as pd
 import pickle
 from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 from sklearn.feature_selection import SelectKBest, RFECV, RFE
-from sklearn.feature_selection import chi2, f_classif, mutual_info_classif
+from sklearn.feature_selection import f_classif
 from sklearn.ensemble import ExtraTreesClassifier
-from sklearn import preprocessing
 from utils import *
 
 K_FEATURES = 16
@@ -21,7 +20,7 @@ def filter_feature_selection(X, y):
     For classification: chi2, f_classif, mutual_info_classif
     """
 
-    best_features = SelectKBest(score_func=f_classif, k=K_FEATURES) # f_classif, f_regression
+    best_features = SelectKBest(score_func=f_classif, k=K_FEATURES)
     fit = best_features.fit(X,y)
     
     df_scores = pd.DataFrame(fit.scores_)
