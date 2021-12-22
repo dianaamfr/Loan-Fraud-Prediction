@@ -13,7 +13,7 @@ def disp_du():
     disp_distribution(df)
 
 def disp_distribution(df):
-    sns.countplot(x ='disp_type', data = df)
+    sns.countplot(x ='disp_type', data = df, palette=['#FFD6E1','#E898AC'])
     plt.title('Disposition Type')
     plt.xlabel('type')
     plt.savefig(get_distribution_folder('disp')/'type.jpg')

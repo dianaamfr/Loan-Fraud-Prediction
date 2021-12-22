@@ -171,7 +171,7 @@ def average_crimes():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     
     # Average crimes for the district of the account
 
@@ -204,7 +204,7 @@ def average_unemployment():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     
     # Average unemployment for the district of the account
 
@@ -234,7 +234,7 @@ def same_district():
         'JOIN district AS district_client ON district_client.district_id = client.district_id '\
         'WHERE disposition.disp_type = "OWNER"')
     
-    sns.countplot(x='same_district', data=df,  hue="loan_status")
+    sns.countplot(x='same_district', data=df,  hue="loan_status", palette=['#ff9973ff', '#00cfccff'])
     plt.savefig(get_correlation_folder('district')/'same_district_status.jpg')
     plt.clf()
 

@@ -8,7 +8,7 @@ from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 
-RS = 42
+RS = None
 BASE_ESTIMATOR = 'random_forest'
 TREE_BASED_CLASSIFIERS = ['decision_tree','random_forest','xgboost','gradient_boosting']
 
@@ -61,11 +61,11 @@ def get_grid_params(classifier):
     if classifier == 'decision_tree':
         return {'criterion': ['gini', 'entropy'],
                 'splitter': ['best', 'random'],
-                'max_depth': [3,5,7,10],
+                'max_depth': [3,5,7,10, 12],
                 'min_samples_split': [1,2,3],
                 'min_samples_leaf': [1,2,3],
                 'min_weight_fraction_leaf': [0.0],
-                'max_features': [None, 'auto', 'sqrt', 'log2', 12, 15],
+                'max_features': [None, 'auto', 'sqrt', 'log2', 10, 12, 15],
                 'max_leaf_nodes': [None],
                 'min_impurity_decrease': [0.0],
                 'class_weight': [None],
@@ -126,18 +126,18 @@ def get_grid_params(classifier):
         
     elif classifier == 'xgboost':
         return {'min_child_weight':range(1,6,2),
-                'gamma': [0,0.5,1,1.5],
-                'max_depth': [5, 14, 30],
-                'reg_alpha':[1e-5, 1e-2, 0.1, 1]}
+            'gamma': [0,0.2,0.5,1,1.5,3],
+            'max_depth':[5,8,10,15],
+            'reg_alpha':[1e-5, 1e-2, 0.1, 1]}
 
     
 def get_classifier_best(classifier):
     if classifier == 'decision_tree':
-        return DecisionTreeClassifier(criterion='entropy', max_features='auto', max_depth=10, min_samples_leaf=3)
+        return DecisionTreeClassifier(criterion='entropy', max_features='auto', max_depth=10, min_samples_leaf=4)
     elif classifier == 'logistic_regression':
         return LogisticRegression(C = 0.1, class_weight= 'balanced', penalty= 'l2', solver= 'saga', max_iter=200)
     elif classifier == 'random_forest':
-        return RandomForestClassifier(class_weight= 'balanced_subsample', criterion= 'gini', max_depth= 30)
+        return RandomForestClassifier(class_weight= 'balanced', criterion="entropy",  max_depth=14)
     elif classifier == 'gradient_boosting':
         return GradientBoostingClassifier(random_state=RS, criterion='friedman_mse', learning_rate=0.7, loss= 'exponential', min_samples_leaf= 6, min_samples_split= 4, n_estimators= 12)
     elif classifier == 'svm':
@@ -152,4 +152,3 @@ def get_classifier_best(classifier):
                     use_label_encoder=False, eval_metric='auc')
     elif classifier == 'bagging':
         return BaggingClassifier(get_classifier_best(BASE_ESTIMATOR), random_state=RS, n_jobs=-1)
-

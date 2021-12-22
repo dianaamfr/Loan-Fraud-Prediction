@@ -64,12 +64,12 @@ def card_type_status():
 
     x_axis = np.arange(df['card_type'].nunique())
 
-    fig, ax = plt.subplots(figsize=(16, 6))
+    _, ax = plt.subplots(figsize=(16, 6))
 
     x_ticks = [str(col) for col in df['card_type'].value_counts().index]
 
-    plt.bar(x_axis - 0.2, df_good_count['total']/len(df_good['loan_status']), 0.4, label = 'status 1', color='green', alpha=0.6)
-    plt.bar(x_axis + 0.2, df_bad_count['total']/len(df_bad['loan_status']), 0.4, label = 'status -1', color='red', alpha=0.6)
+    plt.bar(x_axis - 0.2, df_good_count['total']/len(df_good['loan_status']), 0.4, label = 'status 1', color='#00cfccff', alpha=1.0)
+    plt.bar(x_axis + 0.2, df_bad_count['total']/len(df_bad['loan_status']), 0.4, label = 'status -1', color='#ff9973ff', alpha=1.0)
 
     plt.xticks(x_axis, x_ticks)
     plt.xlabel("type", labelpad=10)

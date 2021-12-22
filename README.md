@@ -2,6 +2,8 @@
 
 ## Compilation
 
+### Database
+
 From the **src** folder of the repository:
 
 Create MySQL database:
@@ -18,24 +20,25 @@ Create MySQL database:
 2. mysql -u root -p --local-infile=1 bank_database < database/database.sql
 ```
 
-### Ubuntu
+### Graphviz
 
-Create the virtual environment:
+Also, to plot the trees you must install graphviz in your system.
+> https://graphviz.org/download/
+
+### Create the virtual environment
+#### Ubuntu
 ```properties
 1. python3 -m venv env
 2. source env/bin/activate
 3. pip3 install -r ../requirements.txt
 ```
 
-## Windows
-
-Create the virtual environment:
+#### Windows
 ```properties
 1. py -m venv env
 2. .\env\Scripts\activate.bat
 3. pip install -r ..\requirements.txt
 ```
-
 ***
 
 ## Run
@@ -54,3 +57,18 @@ Create the virtual environment:
 > `make test <classifier> <submission_name>` 
 - outputs results/&lt;classifier &gt;-&lt;submission_name &gt;.csv
 - *e.g.* `make test logistic_regression sub2` will apply the model models/logistic_regression-sub2.sav to the data from clean_data/sub2-test.csv and store in results/logistic_regression-sub2.csv
+
+4. **Explore**: Explore the various datasets by printing some statistics and generating some plots
+> `make explore <table>`
+- outputs generated plots in the folder data_understanding/plots
+- Available tables: account, card, client, disp, district, loan, trans
+- *e.g.* `make explore account` will perform data exploration to the table Account, saving some plots in the folders data_understanding/plots/distribution/account and data_understanding/plots/correlation/account
+
+5. **Clustering**: Solve the descriptive problem, by generating some graphs describing the cluster approach to distinguish between different client types
+> `make clustering`
+- outputs generated graphs that are opened in the browser
+
+6. **Clean Models**: Empty the folder models containing the trained models
+> `make clean_models`
+
+7. **Clean Cache**: Empty the Python cache folders (\_\_pycache\_\_)

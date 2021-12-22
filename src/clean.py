@@ -1,16 +1,13 @@
 import pandas as pd
 import numpy as np
-from pandas.io.formats.format import DataFrameFormatter
 from sklearn import preprocessing
-from datetime import datetime, date
+from datetime import datetime
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 sys.path.insert(1, '.')
 from database import database
 db = database.Database('bank_database')
-
-#pd.set_option('display.max_columns', None)
 
 #############
 # Correlation
@@ -149,26 +146,14 @@ def clean_districts(db):
     df["nr_commited_crimes_95"] = pd.to_numeric(df["nr_commited_crimes_95"], errors='coerce')
     df["unemployment_rate_95"] = pd.to_numeric(df["unemployment_rate_95"], errors='coerce')
     
-    # median_nr_crimes_95 = df["nr_commited_crimes_95"].median(skipna=True)
-    # median_unemployment_rate_95 = df["unemployment_rate_95"].median(skipna=True)
-    # mean_nr_crimes_95 = df["nr_commited_crimes_95"].mean(skipna=True)
-    # mean_unemployment_rate_95 = df["unemployment_rate_95"].mean(skipna=True)
-
-    # Replace nr of crimes and unemployment missing values by median
-    # df["nr_commited_crimes_95"].fillna(median_nr_crimes_95, inplace=True)
-    # df["unemployment_rate_95"].fillna(median_unemployment_rate_95, inplace=True)
-    
-    # Replace nr of crimes and unemployment missing values by mean
-    # df["nr_commited_crimes_95"].fillna(mean_nr_crimes_95, inplace=True)
-    # df["unemployment_rate_95"].fillna(mean_unemployment_rate_95, inplace=True)
-
     # Replace nr of crimes and unemployment missing values by 96 values
     df["nr_commited_crimes_95"].fillna(df['nr_commited_crimes_96'], inplace=True)
     df["unemployment_rate_95"].fillna(df['unemployment_rate_96'], inplace=True)
 
+
     # FEATURE EXTRACTION
 
-    # Entrepeneurs Ratio
+    # Entrepreneurs Ratio
     df['ratio_entrepreneurs'] = df['nr_enterpreneurs_1000_inhabitants'] / 1000
 
     # Average Crimes
@@ -269,7 +254,7 @@ def clean_transactions(db, test=False, op=False, k_symbol=False):
     trans_type_count_df = pd.merge(credit_counts, withdrawal_counts, on="account_id", how="outer")
     trans_type_count_df.fillna(0, inplace=True)
     trans_type_count_df['credit_ratio'] = trans_type_count_df['num_credits'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
-    #trans_type_count_df['withdrawal_ratio'] = trans_type_count_df['num_withdrawals'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
+    # trans_type_count_df['withdrawal_ratio'] = trans_type_count_df['num_withdrawals'] / (trans_type_count_df['num_credits'] + trans_type_count_df['num_withdrawals'])
 
     trans_type_count_df.drop(columns=['num_credits', 'num_withdrawals'], inplace=True)
     new_df = pd.merge(new_df, trans_type_count_df, on="account_id", how="outer")
@@ -279,7 +264,7 @@ def clean_transactions(db, test=False, op=False, k_symbol=False):
             ' MIN(balance) AS min_balance, STDDEV(balance) AS std_balance '\
             'FROM ' + table + ' GROUP BY account_id')
     balance_count_df['negative_balance'] = balance_count_df['min_balance'] < 0
-    #balance_count_df.drop(columns=['min_balance'], inplace=True)
+    # balance_count_df.drop(columns=['min_balance'], inplace=True)
     balance_count_df = encode_category(balance_count_df, 'negative_balance')
 
     # Last Transaction
@@ -296,47 +281,62 @@ def clean_transactions(db, test=False, op=False, k_symbol=False):
     # Operation
     ###########
     if op:
-        operation_amount = df_copy.groupby(['account_id', 'operation']).agg({'amount': ['mean', 'count']}).reset_index()
-        operation_amount.columns = ['account_id', 'operation', 'operation_amount_mean', 'operation_amount_count']
+        operation = df_copy.groupby(['account_id', 'operation']).agg({'trans_id': ['count']}).reset_index()
+        operation.columns = ['account_id', 'operation', 'operation_count']
         
         # credit in cash = CashC
-        cashC_operation = operation_amount[operation_amount['operation'] == 'CashC']
-        cashC_operation.columns = ['account_id', 'operation', 'mean_cash_credit', 'num_cash_credit']
+        cashC_operation = operation[operation['operation'] == 'CashC']
+        cashC_operation.columns = ['account_id', 'operation', 'num_cash_credit']
         cashC_operation = cashC_operation.drop(['operation'], axis=1)
 
         # collection from another bank = Coll
-        coll_operation = operation_amount[operation_amount['operation'] == 'Coll']
-        coll_operation.columns = ['account_id', 'operation', 'mean_coll', 'num_coll']
+        coll_operation = operation[operation['operation'] == 'Coll']
+        coll_operation.columns = ['account_id', 'operation', 'num_coll']
         coll_operation = coll_operation.drop(['operation'], axis=1)
 
         # interest credited = Interest,
-        interest_operation = operation_amount[operation_amount['operation'] == 'Interest']
-        interest_operation.columns = ['account_id', 'operation', 'mean_interest', 'num_interest']
+        interest_operation = operation[operation['operation'] == 'Interest']
+        interest_operation.columns = ['account_id', 'operation', 'num_interest']
         interest_operation = interest_operation.drop(['operation'], axis=1)
 
         # withdrawal in cash = CashW
-        cashW_operation = operation_amount[operation_amount['operation'] == 'CashW']
-        cashW_operation.columns = ['account_id', 'operation', 'mean_cash_withdrawal', 'num_cash_withdrawal']
+        cashW_operation = operation[operation['operation'] == 'CashW']
+        cashW_operation.columns = ['account_id', 'operation', 'num_cash_withdrawal']
         cashW_operation = cashW_operation.drop(['operation'], axis=1)
 
         # remittance to another bank = Rem
-        rem_operation = operation_amount[operation_amount['operation'] == 'Rem']
-        rem_operation.columns = ['account_id', 'operation', 'mean_rem', 'num_rem']
+        rem_operation = operation[operation['operation'] == 'Rem']
+        rem_operation.columns = ['account_id', 'operation', 'num_rem']
         rem_operation = rem_operation.drop(['operation'], axis=1)
 
         # credit card withdrawal = CardW
-        cardW_operation = operation_amount[operation_amount['operation'] == 'CardW']
-        cardW_operation.columns = ['account_id', 'operation', 'mean_card_withdrawal', 'num_card_withdrawal']
+        cardW_operation = operation[operation['operation'] == 'CardW']
+        cardW_operation.columns = ['account_id', 'operation', 'num_card_withdrawal']
         cardW_operation = cardW_operation.drop(['operation'], axis=1)
         
-        operation_amount_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
-        operation_amount_df = operation_amount_df.merge(interest_operation, on='account_id',how='outer')
-        operation_amount_df = operation_amount_df.merge(cashW_operation, on='account_id',how='outer')
-        operation_amount_df = operation_amount_df.merge(rem_operation, on='account_id',how='outer')
-        operation_amount_df = operation_amount_df.merge(cardW_operation, on='account_id',how='outer')
-        operation_amount_df.fillna(0, inplace=True)
+        operation_df = cashC_operation.merge(coll_operation, on='account_id',how='outer')
+        operation_df = operation_df.merge(interest_operation, on='account_id',how='outer')
+        operation_df = operation_df.merge(cashW_operation, on='account_id',how='outer')
+        operation_df = operation_df.merge(rem_operation, on='account_id',how='outer')
+        operation_df = operation_df.merge(cardW_operation, on='account_id',how='outer')
+        operation_df.fillna(0, inplace=True)
+
+        operation_num = ['num_cash_credit','num_rem','num_card_withdrawal', 'num_cash_withdrawal', 'num_interest', 'num_coll']
+        operation_df['total_operations'] = operation_df[operation_num].sum(axis=1)
+
+        # Calculate Ratio for each operation
+        operation_df['cash_credit_ratio'] = operation_df['num_cash_credit']/operation_df['total_operations']
+        operation_df['rem_ratio'] = operation_df['num_rem']/operation_df['total_operations']
+        operation_df['card_withdrawal_ratio'] = operation_df['num_card_withdrawal']/operation_df['total_operations']
+        operation_df['cash_withdrawal_ratio'] = operation_df['num_cash_withdrawal']/operation_df['total_operations']
+        operation_df['interest_ratio'] = operation_df['num_interest']/operation_df['total_operations']
+        operation_df['coll_ratio'] = operation_df['num_coll']/operation_df['total_operations']
+
+        operation_df.drop(columns=operation_num, inplace=True)
+        operation_df.drop(columns=['total_operations'], inplace=True)
         
-        new_df = pd.merge(new_df, operation_amount_df, on="account_id", how="outer")
+        new_df = pd.merge(new_df, operation_df, on="account_id", how="outer")
+
 
     # K-Symbol
     if k_symbol:
@@ -405,7 +405,6 @@ def merge_datasets(db, test=False, op=False, k_symbol=False):
     df = pd.merge(loan, account, on='account_id', how="left")
     df = pd.merge(df, disp,  on='account_id', how="left")
     df = pd.merge(df, client,  on='client_id', how="left")
-    # TODO - fazer 2 gráficos para escolher os dados do district relativos à account ou ao cliente
     df = pd.merge(df, district, left_on='client_district_id', right_on='district_id')
     df = pd.merge(df, transaction, how="left", on="account_id")
     df = pd.merge(df, cards, how="left", on="account_id")
@@ -434,23 +433,6 @@ def extract_features(df):
     return df
 
 
-#############
-# Submissions
-#############
-
-# Submission 1 - only loan
-def first_submission(output_name):
-
-    loan_train = db.df_query('SELECT granted_date, amount, payments, loan_status FROM loan_train')
-    # Transform Status - 1 => 0 (loan granted) and -1 => 1 (loan not granted - aim of the analysis)
-    #transform_status(loan_train)
-    loan_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
-
-    loan_test = db.df_query('SELECT loan_id, granted_date, amount, payments FROM loan_test')
-    loan_test.to_csv('clean_data/' + output_name + '-test.csv', index=False)
-
-
-# For other submissions
 def clean(output_name):
 
     ############
@@ -471,7 +453,6 @@ def clean(output_name):
     df_train = df_train.set_index('loan_id')
 
     transform_status(df_train)
-    print(len(df_train.columns))
     df_train.to_csv('clean_data/' + output_name + '-train.csv', index=False)
 
     ############

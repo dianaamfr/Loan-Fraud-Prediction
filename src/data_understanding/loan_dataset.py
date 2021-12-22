@@ -139,10 +139,10 @@ def loan_amount_status(df):
 
     _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
-    df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
+    df_good.amount.hist(bins=20, ax=ax1, label='status 1', color='#00cfccff', alpha=1.0,
      weights=np.ones(len(df_good.amount)) / len(df_good.amount))
 
-    df_bad.amount.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+    df_bad.amount.hist(bins=20, ax=ax2, label='status -1', color='#ff9973ff', alpha=1.0,
      weights=np.ones(len(df_bad.amount)) / len(df_bad.amount))
 
     ax1.set_xlim([0,550000])
@@ -194,10 +194,10 @@ def loan_payments_status(df):
 
     _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
-    df_good.payments.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
+    df_good.payments.hist(bins=20, ax=ax1, label='status 1', color='#00cfccff', alpha=1.0,
      weights=np.ones(len(df_good.payments)) / len(df_good.payments))
 
-    df_bad.payments.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+    df_bad.payments.hist(bins=20, ax=ax2, label='status -1', color='#ff9973ff', alpha=1.0,
      weights=np.ones(len(df_bad.payments)) / len(df_bad.payments))
 
     ax1.set_xlim([0,10000])
