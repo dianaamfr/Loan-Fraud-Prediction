@@ -12,3 +12,4 @@ statsmodels==0.13.1
 xgboost==1.5.1
 scikit-learn-extra==0.2.0
 graphviz==0.8.1
+plotly==5.5.0
