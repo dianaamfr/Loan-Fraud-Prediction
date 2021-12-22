@@ -4,7 +4,7 @@ from clean import *
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn import metrics
 from sklearn.metrics import silhouette_score
@@ -12,7 +12,7 @@ from sklearn.cluster import DBSCAN
 import plotly.graph_objects as go
 from itertools import product
 import scipy.cluster.hierarchy as sch
-from collections import Counter, defaultdict
+from collections import Counter
 
 DEBUG = False
 #######
@@ -72,7 +72,6 @@ def elbow_method(df):
 
     nr_clusters = []
     inertias = []
-    scores = []
     range_values = np.arange(2,8)
 
     for k in range_values:
@@ -120,7 +119,7 @@ def clustering_agglomerative(df, n_clusters=2, linkage='average', n_components=2
     # Create Dendrogram
     cmap = cm.rainbow(np.linspace(0, 1, 10))
     sch.set_link_color_palette([colors.rgb2hex(rgb[:3]) for rgb in cmap])
-    dendrogram = sch.dendrogram(sch.linkage(df_copy, method=linkage))
+    _ = sch.dendrogram(sch.linkage(df_copy, method=linkage))
     plt.savefig('dendogram.jpg')
     plt.clf()
 
@@ -437,14 +436,13 @@ def clustering_economic():
     clustering_kmedoids(df4, 3)
 
 
-
 def clustering_demographic():
     df =  merge_datasets(db,False, True)
     df['age'] = df['birth_date'].apply(lambda x: calculate_age(x))
     df = extract_features(df)
 
     # CLUSTERING 1
-    df1 = df[['ratio_entrepeneurs', 'avg_crimes', 'avg_unemployment']]
+    df1 = df[['ratio_entrepreneurs', 'avg_crimes', 'avg_unemployment']]
     clustering_kmeans(df1)
 
     # CLUSTERING 2
@@ -455,9 +453,9 @@ def clustering_demographic():
     clustering_kmedoids(df2, 2)
 
     # CLUSTERING 3
-    df3 = df[['nr_municip_inhabitants_2000_9999', 'avg_crimes', 'ratio_entrepeneurs']]
+    df3 = df[['nr_municip_inhabitants_2000_9999', 'avg_crimes', 'ratio_entrepreneurs']]
     clustering_kmeans(df3)
 
 if __name__ == "__main__":
-    #clustering_economic()
+    clustering_economic()
     clustering_demographic()

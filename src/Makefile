@@ -24,6 +24,15 @@ train:
 test:
 	@$(PYTHON) test.py $(filter-out $@, $(RUN_ARGS))
 
+# explore <table>
+# make explore [account, card, client, disp, district, loan, trans]
+explore:
+	@-$(PYTHON) ./data_understanding/$(word 1,$(RUN_ARGS))_dataset.py || (echo "Wrong table name. Available: account, card, client, disp, district, loan, trans")
+
+# make clustering
+clustering:
+	@$(PYTHON) clustering.py
+
 clean_models:
 	rm -rf models/*
 

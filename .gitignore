@@ -5,3 +5,5 @@ __pycache__
 
 src/data_understanding/plots/**/**
 src/models/confusion_matrix.jpg
+src/models/tree.jpg
+src/dendogram.jpg

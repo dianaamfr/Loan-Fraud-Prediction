@@ -156,7 +156,7 @@ def clean_districts(db):
 
     # FEATURE EXTRACTION
 
-    # Entrepeneurs Ratio
+    # Entrepreneurs Ratio
     df['ratio_entrepreneurs'] = df['nr_enterpreneurs_1000_inhabitants'] / 1000
 
     # Average Crimes

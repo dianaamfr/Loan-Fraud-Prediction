@@ -54,3 +54,18 @@ Create the virtual environment:
 > `make test <classifier> <submission_name>` 
 - outputs results/&lt;classifier &gt;-&lt;submission_name &gt;.csv
 - *e.g.* `make test logistic_regression sub2` will apply the model models/logistic_regression-sub2.sav to the data from clean_data/sub2-test.csv and store in results/logistic_regression-sub2.csv
+
+4. **Explore**: Explore the various datasets by printing some statistics and generating some plots
+> `make explore <table>`
+- outputs generated plots in the folder data_understanding/plots
+- Available tables: account, card, client, disp, district, loan, trans
+- *e.g.* `make explore account` will perform data exploration to the table Account, saving some plots in the folders data_understanding/plots/distribution/account and data_understanding/plots/correlation/account
+
+5. **Clustering**: Solve the descriptive problem, by generating some graphs describing the cluster approach to distinguish between different client types
+> `make clustering`
+- outputs generated graphs that are opened in the browser
+
+6. **Clean Models**: Empty the folder models containing the trained models
+> `make clean_models`
+
+7. **Clean Cache**: Empty the Python cache folders (\_\_pycache\_\_)

@@ -126,9 +126,9 @@ def get_grid_params(classifier):
         
     elif classifier == 'xgboost':
         return {'min_child_weight':range(1,6,2),
-                'gamma': [0,0.5,1,1.5],
-                'max_depth': [5, 14, 30],
-                'reg_alpha':[1e-5, 1e-2, 0.1, 1]}
+            'gamma': [0,0.2,0.5,1,1.5,3],
+            'max_depth':[5,8,10,15],
+            'reg_alpha':[1e-5, 1e-2, 0.1, 1]}
 
     
 def get_classifier_best(classifier):
