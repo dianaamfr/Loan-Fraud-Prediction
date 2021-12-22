@@ -422,11 +422,6 @@ def clustering_economic():
     clustering_kmeans(df3, 4, 'k-means++', 2)
     clustering_kmedoids(df3, 4, 'k-medoids++', 2)
 
-    # CLUSTERING 4
-    df5 = df[['num_rem', 'mean_rem', 'amount']]
-    clustering_dbscan(df5, 0.2, 2)
-    clustering_kmeans(df5)
-
     # CLUSTERING 4 - for all clients that have transactions
     df4 =  merge_transactions_clients(db)
     df4 = df4[['avg_amount_credit', 'average_salary', 'avg_amount_withdrawal', 'avg_balance']]

@@ -2,6 +2,8 @@
 
 ## Compilation
 
+### Database
+
 From the **src** folder of the repository:
 
 Create MySQL database:
@@ -18,24 +20,25 @@ Create MySQL database:
 2. mysql -u root -p --local-infile=1 bank_database < database/database.sql
 ```
 
-### Ubuntu
+### Graphviz
 
-Create the virtual environment:
+Also, to plot the trees you must install graphviz in your system.
+> https://graphviz.org/download/
+
+### Create the virtual environment
+#### Ubuntu
 ```properties
 1. python3 -m venv env
 2. source env/bin/activate
 3. pip3 install -r ../requirements.txt
 ```
 
-## Windows
-
-Create the virtual environment:
+#### Windows
 ```properties
 1. py -m venv env
 2. .\env\Scripts\activate.bat
 3. pip install -r ..\requirements.txt
 ```
-
 ***
 
 ## Run
