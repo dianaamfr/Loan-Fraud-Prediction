@@ -139,7 +139,7 @@ def num_trans_status():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.num_trans.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
      weights=np.ones(len(df_good.num_trans)) / len(df_good.num_trans))
@@ -173,7 +173,7 @@ def avg_amount_status():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.avg_amount.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
      weights=np.ones(len(df_good.avg_amount)) / len(df_good.avg_amount))
@@ -206,7 +206,7 @@ def avg_balance_status():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.avg_balance.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
      weights=np.ones(len(df_good.avg_balance)) / len(df_good.avg_balance))
@@ -262,7 +262,7 @@ def transactions_loan_date():
     merged_df = pd.merge(df_loan, df_account, how="inner",on="account_id")
     merged_df = pd.merge(merged_df, df_trans, how="inner",on="account_id")
 
-    for index, row in merged_df.iterrows():
+    for index, _ in merged_df.iterrows():
         merged_df["granted_date"][index] = datetime(int("19"+str(merged_df["granted_date"][index])[0:2]),int(str(merged_df["granted_date"][index])[2:4]),int(str(merged_df["granted_date"][index])[4:6]))
         merged_df["trans_date"][index] = datetime(int("19"+str(merged_df["trans_date"][index])[0:2]),int(str(merged_df["trans_date"][index])[2:4]),int(str(merged_df["trans_date"][index])[4:6]))
 
@@ -372,7 +372,7 @@ def trans_operations():
     operation_ratios = ['cash_credit_ratio','rem_ratio','card_withdrawal_ratio', 'cash_withdrawal_ratio', 'interest_ratio', 'coll_ratio']
 
     for operation in operation_ratios:
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+        _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
         
         sns.histplot(ax=ax1, label='status 1', color='green', alpha=0.6, data=df_good, x=operation)
         sns.histplot(ax=ax2, label='status -1', color='red', alpha=0.6, data=df_bad, x=operation)

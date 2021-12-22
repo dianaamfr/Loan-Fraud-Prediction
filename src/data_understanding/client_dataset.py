@@ -37,9 +37,10 @@ def client_decades_distribution(df):
 
     # Birth Decades Bar Chart
     fig = plt.figure(figsize=(16, 7))
-    plt.title("Birth decades of clients")
+    plt.title("Birth decades of clients", fontsize=15)
     ax = sns.countplot(x="decade", data=df)
-    ax.set(xlabel='birth decade', ylabel='number of clients')
+    ax.set_xlabel('birth decade', fontsize=15)
+    ax.set_ylabel('number of clients', fontsize=15)
     plt.tight_layout()
     plt.savefig(get_distribution_folder('client')/'birth_decades.jpg')
     plt.close(fig)

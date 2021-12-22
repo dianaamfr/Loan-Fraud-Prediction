@@ -36,7 +36,7 @@ def district_id_status():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.district_id.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6,
      weights=np.ones(len(df_good.district_id)) / len(df_good.district_id))
@@ -66,10 +66,10 @@ def frequency_status():
 
     x_axis = np.arange(df['frequency'].nunique())
 
-    fig, ax = plt.subplots(figsize=(7, 6))
+    _, ax = plt.subplots(figsize=(7, 6))
 
-    plt.bar(x_axis - 0.2, df_good['frequency'].value_counts()/len(df_good), 0.4, label = 'status 1', color='green', alpha=0.6)
-    plt.bar(x_axis + 0.2, df_bad['frequency'].value_counts()/len(df_bad), 0.4, label = 'status -1', color='red', alpha=0.6)
+    plt.bar(x_axis - 0.2, df_good['frequency'].value_counts()/len(df_good), 0.4, label = 'status 1', color='#00cfccff', alpha=1.0)
+    plt.bar(x_axis + 0.2, df_bad['frequency'].value_counts()/len(df_bad), 0.4, label = 'status -1', color='#ff9973ff', alpha=1.0)
 
     plt.xticks(x_axis, df['frequency'].unique())
     plt.xlabel("Frequency", labelpad=10)
@@ -96,12 +96,12 @@ def days_between_account_loan():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     
-    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
+    df_good.days_between_statistics.dt.days.hist(bins=20, ax=ax1, label='status 1', color='#00cfccff', alpha=1.0, 
      weights=np.ones(len(df_good.days_between_statistics.dt.days)) / len(df_good.days_between_statistics.dt.days))
-   
-    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='status -1', color='red', alpha=0.6,
+
+    df_bad.days_between_statistics.dt.days.hist(bins=20, ax=ax2, label='status -1', color='#ff9973ff', alpha=1.0,
      weights=np.ones(len(df_bad.days_between_statistics.dt.days)) / len(df_bad.days_between_statistics.dt.days))
 
     ax1.set_ylim([0,0.15])
@@ -127,7 +127,7 @@ def date_loan_issued():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.granted_date.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
      weights=np.ones(len(df_good.granted_date)) / len(df_good.granted_date))
@@ -158,7 +158,7 @@ def date_account_creation():
     df_good = df.loc[df['loan_status'] == 1]
     df_bad = df.loc[df['loan_status'] == -1]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     df_good.creation_date.hist(bins=20, ax=ax1, label='status 1', color='green', alpha=0.6, 
      weights=np.ones(len(df_good.creation_date)) / len(df_good.creation_date))
