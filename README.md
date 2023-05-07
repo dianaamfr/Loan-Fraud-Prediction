@@ -1,6 +1,7 @@
 # To Loan or not to Loan
 
 A data mining project to help bank managers avoid trusting non-compliant clients with loans by predicting if a loan will end successfully based on data about the clients and previous loans.
+This project was developed during the Machine Learning course at FEUP.
 
 ## Compilation
 
