@@ -1,4 +1,4 @@
-# AC - To Loan or not to Loan
+# To Loan or not to Loan
 
 ## Compilation
 
