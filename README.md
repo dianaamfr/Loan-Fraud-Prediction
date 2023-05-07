@@ -72,3 +72,8 @@ Also, to plot the trees you must install graphviz in your system.
 > `make clean_models`
 
 7. **Clean Cache**: Empty the Python cache folders (\_\_pycache\_\_)
+
+## Collaborators
+1. [Diana Freitas](https://github.com/dianaamfr)
+2. [Mariana Ramos](https://github.com/marianaramos37)
+3. [Paulo Ribeiro](https://github.com/paulinho-16)
